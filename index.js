@@ -1,4 +1,3 @@
-javascript
 import { Telegraf, Markup } from 'telegraf';
 import express from 'express';
 import { createClient } from '@supabase/supabase-js';
