@@ -1,57 +1,96 @@
-// index.js - Shaya Watch Mnelisi - FINAL with Adsgram bot-57165
-import { Telegraf, Markup } from 'telegraf'
-import express from 'express'
-import { createClient } from '@supabase/supabase-js'
-import 'dotenv/config'
+javascript
+import { Telegraf, Markup } from 'telegraf';
+import express from 'express';
+import { createClient } from '@supabase/supabase-js';
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN)
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
-const BLOCK_ID = 'bot-57165'
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const PORT = process.env.PORT || 10000;
 
-const app = express()
-app.use(express.json())
+if (!BOT_TOKEN || !SUPABASE_URL || !SUPABASE_KEY) {
+  console.log("Missing env vars!");
+}
 
-app.get('/api/adsgram-reward', async (req, res) => {
-  const userId = req.query.userId || req.query.user_id
-  console.log('Ad watched by:', userId)
-  if (userId) {
-    try {
-      let { data: user } = await supabase.from('ai_lovers_users').select('*').eq('telegram_id', userId).single()
-      if (user) {
-        await supabase.from('ai_lovers_users').update({ balance: (user.balance || 0) + 0.5 }).eq('telegram_id', userId)
-        bot.telegram.sendMessage(userId, `✅ +R0.50! Balance: R${(user.balance + 0.5).toFixed(2)}`, Markup.inlineKeyboard([[Markup.button.callback('📺 Watch Again', 'watch_ad')]]))
-      }
-    } catch (e) { console.log(e) }
-  }
-  res.send('OK')
-})
+const bot = new Telegraf(BOT_TOKEN);
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// YOUR VIDEOS - Add more links here later
+const VIDEOS = [
+  "https://youtu.be/8qd-mgCEk7E?si=c5RVb8yA7MntAXge",
+  "https://youtu.be/8qd-mgCEk7E?si=c5RVb8yA7MntAXge" // You can add 4 more different links here
+];
 
 bot.start(async (ctx) => {
-  let { data: user } = await supabase.from('ai_lovers_users').select('*').eq('telegram_id', ctx.from.id).single()
+  const telegram_id = ctx.from.id;
+  const username = ctx.from.username || ctx.from.first_name;
+
+  // Create user if not exists
+  let { data: user } = await supabase.from('users').select('*').eq('telegram_id', telegram_id).single();
+  
   if (!user) {
-    await supabase.from('ai_lovers_users').insert({ telegram_id: ctx.from.id, username: ctx.from.username, first_name: ctx.from.first_name, balance: 0 })
-    user = { balance: 0 }
+    const { data } = await supabase.from('users').insert([{ telegram_id, username, balance: 0 }]).select().single();
+    user = data;
   }
-  ctx.reply(`🔥 Welcome to Shaya Watch Bot 💰\n\nEarn R0.50 per Ad\nBalance: R${(user.balance||0).toFixed(2)}`, Markup.inlineKeyboard([
-    [Markup.button.callback('📺 Watch Ad + Earn R0.50', 'watch_ad')],
-    [Markup.button.callback('💰 Balance', 'balance')]
-  ]))
-})
+
+  await ctx.reply(
+    `🔥 Welcome to Shaya Watch Bot 💰\n\nEarn R0.50 per video!\n\nBalance: R${(user.balance || 0).toFixed(2)}`,
+    Markup.inlineKeyboard([
+      [Markup.button.callback('📺 Watch Video + Earn R0.50', 'watch_ad')],
+      [Markup.button.callback('💰 Balance', 'balance')]
+    ])
+  );
+});
 
 bot.action('watch_ad', async (ctx) => {
-  const adLink = `https://adsgram.ai/show?blockId=${BLOCK_ID}&userId=${ctx.from.id}`
-  ctx.reply(`📺 Watch 15 sec to earn R0.50:`, Markup.inlineKeyboard([
-    [Markup.button.url('▶️ WATCH AD NOW', adLink)],
-    [Markup.button.callback('✅ I Watched', 'check_reward')]
-  ]))
-})
+  const telegram_id = ctx.from.id;
+  const randomVideo = VIDEOS[Math.floor(Math.random() * VIDEOS.length)];
 
-bot.action('check_reward', async (ctx) => { ctx.reply('⏳ Reward coming in 1 min if you watched full ad!') })
+  // Save watch time
+  await supabase.from('users').update({ last_watch: new Date().toISOString() }).eq('telegram_id', telegram_id);
+
+  await ctx.reply(
+    `📺 Watch this video (15 sec) to earn R0.50:\n\n${randomVideo}\n\n👇 After watching, click Claim:`,
+    Markup.inlineKeyboard([
+      [Markup.button.callback('✅ I Watched - Claim R0.50', 'check_reward')]
+    ])
+  );
+});
+
+bot.action('check_reward', async (ctx) => {
+  const telegram_id = ctx.from.id;
+  const { data: user } = await supabase.from('users').select('*').eq('telegram_id', telegram_id).single();
+
+  if (!user || !user.last_watch) {
+    return ctx.reply("Click Watch Video first!");
+  }
+
+  const diffSec = (new Date() - new Date(user.last_watch)) / 1000;
+
+  if (diffSec < 15) {
+    return ctx.reply(`⏳ Watch full video! Wait ${Math.ceil(15 - diffSec)} sec more, then try again.`);
+  }
+
+  const newBalance = (user.balance || 0) + 0.50;
+  await supabase.from('users').update({ balance: newBalance, last_watch: null }).eq('telegram_id', telegram_id);
+
+  await ctx.reply(
+    `🎉 R0.50 Added! New Balance: R${newBalance.toFixed(2)}`,
+    Markup.inlineKeyboard([
+      [Markup.button.callback('📺 Watch Another Video', 'watch_ad')],
+      [Markup.button.callback('💰 Balance', 'balance')]
+    ])
+  );
+});
+
 bot.action('balance', async (ctx) => {
-  let { data: user } = await supabase.from('ai_lovers_users').select('*').eq('telegram_id', ctx.from.id).single()
-  ctx.reply(`💰 Balance: R${(user?.balance||0).toFixed(2)}\nMin withdrawal R50`)
-})
+  const { data: user } = await supabase.from('users').select('*').eq('telegram_id', ctx.from.id).single();
+  ctx.reply(`💰 Your Balance: R${(user?.balance || 0).toFixed(2)}\n\nKeep watching to earn more!`);
+});
 
-bot.launch()
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => console.log(`Live on ${PORT} Block ${BLOCK_ID}`))
+bot.launch().then(() => console.log("Bot running!"));
+
+// Keep Render alive
+const app = express();
+app.get('/', (req, res) => res.send('ShayaWatch Bot Live!'));
+app.listen(PORT, () => console.log(`Server on ${PORT}`));
