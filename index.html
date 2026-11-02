@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src='https://libtl.com/sdk.js' data-zone='12172507' data-sdk='show_12172507'></script>
+<script src='//libtl.com/sdk.js' data-zone='12172038' data-sdk='show_12172038'></script>
 <style>
 body{background:#000;color:#fff;font-family:Arial;padding:12px;text-align:center}
 #bal{color:#00ff88;font-size:22px;font-weight:bold}
@@ -27,8 +27,8 @@ VIDS.forEach(id=>{
 list.innerHTML+=`<div class="video-box"><iframe src="https://www.youtube.com/embed/${id}" allowfullscreen></iframe><button onclick="earn()">▶️ Watch Ad & Earn R0.50</button></div>`;
 });
 function earn(){
-if(typeof show_12172507!=='function'){alert('Ad loading... wait 5 sec');return;}
-show_12172507().then(()=>{
+if(typeof show_12172038!=='function'){alert('Ad loading... wait 5 sec');return;}
+show_12172038().then(()=>{
 bal+=0.5;localStorage.setItem('shaya_bal',bal);
 document.getElementById('bal').innerText=`Balance: R${bal.toFixed(2)}`;
 alert('✅ +R0.50 earned!');
