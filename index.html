@@ -14,41 +14,53 @@ button{background:#ff004f;color:#fff;border:none;padding:14px;width:100%;border-
 </style>
 </head>
 <body>
-<h2>🎵 SHAYA WATCH</h2>
+<h2>🎵 SHAYA WATCH - 16 VIDEOS</h2>
 <p id="bal">Balance: R0.00</p>
 <div id="list"></div>
 
 <script>
 const tg = Telegram.WebApp;
 tg.expand();
-
 let bal = Number(localStorage.getItem('shaya_bal')||0);
 document.getElementById('bal').innerText = `Balance: R${bal.toFixed(2)}`;
 
-const VIDS = ["8qd-mgCEk7E","LXb3EKWsInQ"];
-const list = document.getElementById('list');
+const VIDS = [
+// Your 9 original
+"y4h7YEGo5-I",
+"Yi8Lcry8IzY",
+"bvl39nmaOYU",
+"K9Ge-bBCPjM",
+"rpeMjYRQgxU",
+"1pNf7Sl9w8E",
+"9B3vAyeF6lU",
+"nkE3yC5PQRE",
+"KRYyPCKPTsw",
+// Big Zulu + Sjava + Eminem hits
+"GqKzS6Bn8UQ", // Big Zulu - Imali Eningi
+"qIl1MbWiCXA", // Sjava - Umama 
+"8NeY9z6Q5vA", // Inkabi Zezwe - Umbayimbayi (Sjava & Big Zulu) 
+"e4w8Bv2Q9kL", // Sjava - Isoka ft Q Twins, Mzukulu (from Isibuko album)
+"xFYQQPAOz7Y", // Eminem - Lose Yourself 
+"YVkUvmDQ3HY", // Eminem - Without Me
+"j5a0jTc9S10"  // Eminem - Godzilla
+];
 
+const list = document.getElementById('list');
 VIDS.forEach(id=>{
   list.innerHTML+=`<div class="video-box">
-  <iframe src="https://www.youtube.com/embed/${id}"></iframe>
+  <iframe src="https://www.youtube.com/embed/${id}" allowfullscreen></iframe>
   <button onclick="earn()">▶️ Watch Ad & Earn R0.50</button>
   </div>`;
 });
 
 function earn(){
-  if(typeof show_12172038 !== 'function'){
-    alert('Ads loading... Wait 5 seconds and try again!');
-    return;
-  }
+  if(typeof show_12172038 !== 'function'){ alert('Ads loading... wait 5 sec'); return; }
   show_12172038().then(()=>{
     bal+=0.5;
     localStorage.setItem('shaya_bal',bal);
     document.getElementById('bal').innerText=`Balance: R${bal.toFixed(2)}`;
     alert('✅ +R0.50 earned!');
-  }).catch(e=>{
-    alert('No ad available right now, try again in 30 sec');
-    console.log(e);
-  });
+  }).catch(()=> alert('No ad, try again in 30 sec'));
 }
 </script>
 </body>
