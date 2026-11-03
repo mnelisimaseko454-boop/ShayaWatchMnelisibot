@@ -1,89 +1,83 @@
-const fs = require('fs');
-const TelegramBot = require('node-telegram-bot-api');
-const express = require('express');
-const cors = require('cors');
-
-const token = process.env.BOT_TOKEN;
-const OWNER_ID = '1159481047'; // YOU - Mnelisi
-const bot = new TelegramBot(token, { polling: true });
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-const APP_URL = 'https://mnelisimaseko454-boop.github.io/ShayaWatchMnelisibot/';
-const USER_EARN = 0.10; // User gets 0.10, YOU keep R1.40 profit
-const MIN_WITHDRAW = 10.00;
-const DB_FILE = './balances.json';
-const WD_FILE = './withdrawals.json';
-
-let balances = {};
-let withdrawRequests = [];
-if (fs.existsSync(DB_FILE)) { try { balances = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); } catch(e){} }
-if (fs.existsSync(WD_FILE)) { try { withdrawRequests = JSON.parse(fs.readFileSync(WD_FILE, 'utf8')); } catch(e){} }
-function saveDB() { fs.writeFileSync(DB_FILE, JSON.stringify(balances, null, 2)); }
-function saveWD() { fs.writeFileSync(WD_FILE, JSON.stringify(withdrawRequests, null, 2)); }
-
-bot.onText(/\/start/, (msg) => {
-  const userId = String(msg.from.id);
-  if (!balances[userId]) {
-    balances[userId] = { balance: 0, totalEarned: 0, username: msg.from.username || msg.from.first_name || 'user' };
-    saveDB();
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src='//libtl.com/sdk.js' data-zone='12172038' data-sdk='show_12172038'></script>
+<style>
+body{background:#000;color:#fff;font-family:Arial;padding:12px;text-align:center}
+#bal{color:#00ff88;font-size:22px;font-weight:bold}
+.video-box{background:#111;border-radius:14px;padding:10px;margin:15px 0}
+iframe{width:100%;height:200px;border:none;border-radius:10px}
+button{border:none;padding:14px;width:100%;border-radius:12px;font-weight:bold;margin-top:10px;cursor:pointer}
+.earn{background:#ff004f;color:#fff}
+.withdraw{background:#00c853;color:#fff;margin:15px 0;font-size:16px}
+.withdraw:disabled{background:#333;color:#888}
+</style>
+</head>
+<body>
+<h2>🎵 SHAYA WATCH</h2>
+<p id="bal">Balance: R0.00 - Loading...</p>
+<button id="wBtn" class="withdraw" onclick="requestWithdraw()">💸 WITHDRAW (Min R10.00)</button>
+<p style="font-size:12px;color:#888">Earn R0.10 per ad • You keep profit</p>
+<div id="list"></div>
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.expand();}
+const API_URL = 'https://shayawatchmnelisibot-4.onrender.com';
+const USER_EARN = 0.10;
+let userId = tg?.initDataUnsafe?.user?.id;
+let username = tg?.initDataUnsafe?.user?.username || tg?.initDataUnsafe?.user?.first_name || 'guest';
+if(!userId){
+  userId = localStorage.getItem('shaya_userId');
+  if(!userId){
+    userId = 'guest_' + Math.random().toString(36).substr(2,9);
+    localStorage.setItem('shaya_userId', userId);
   }
-  bot.sendMessage(msg.chat.id, `🎵 SHAYA WATCH\n\nYour Balance: R${balances[userId].balance.toFixed(2)}\nEarn R${USER_EARN.toFixed(2)} per ad\nMin withdraw: R${MIN_WITHDRAW}\n\nClick to open:`, {
-    reply_markup: { inline_keyboard: [[{ text: "▶️ OPEN SHAYA WATCH", url: APP_URL }]] }
-  });
-});
-
-// API: Get balance - NEVER resets when clear phone
-app.get('/api/balance', (req, res) => {
-  const userId = String(req.query.userId || '');
-  if (!userId) return res.json({ balance: 0 });
-  const data = balances[userId] || { balance: 0, totalEarned: 0 };
-  res.json(data);
-});
-
-// API: Earn
-app.post('/api/earn', (req, res) => {
-  const userId = String(req.body.userId || '');
-  const username = req.body.username || 'user';
-  if (!userId) return res.json({ error: 'no user' });
-  if (!balances[userId]) balances[userId] = { balance: 0, totalEarned: 0, username };
-  balances[userId].balance += USER_EARN;
-  balances[userId].totalEarned += USER_EARN;
-  balances[userId].username = username;
-  saveDB();
-  res.json(balances[userId]);
-});
-
-// API: Withdraw
-app.post('/api/withdraw', (req, res) => {
-  const userId = String(req.body.userId || '');
-  const { method, account } = req.body;
-  const user = balances[userId];
-  if (!user || user.balance < MIN_WITHDRAW) {
-    return res.json({ error: `Need R${MIN_WITHDRAW} minimum. You have R${user ? user.balance.toFixed(2) : '0'}` });
-  }
-  const amount = user.balance;
-  withdrawRequests.push({ userId, username: user.username, method, account, amount, date: new Date().toISOString() });
-  saveWD();
-  user.balance = 0;
-  saveDB();
-  
-  // Alert YOU
-  bot.sendMessage(OWNER_ID, `💰 NEW WITHDRAWAL REQUEST!\n\nUser: @${user.username} (${userId})\nAmount: R${amount.toFixed(2)}\nMethod: ${method}\nAccount: ${account}\n\nPay them! Then type /paid ${userId}`);
-  
-  res.json({ success: true, message: `Withdrawal R${amount.toFixed(2)} requested! Paid in 24h to ${method}: ${account}` });
-});
-
-bot.onText(/\/paid (.+)/, (msg, match) => {
-  if (String(msg.from.id) !== OWNER_ID) return;
-  const userId = String(match[1]);
-  bot.sendMessage(userId, `✅ Your withdrawal has been PAID! Check your account. Thank you for using Shaya Watch 🎵`);
-  bot.sendMessage(OWNER_ID, `Marked ${userId} as paid.`);
-});
-
-app.get('/', (req, res) => res.send(`Shaya Watch API running. Balances: ${Object.keys(balances).length}`));
-
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`API running on ${PORT}`));
+}
+let bal = 0;
+function updateBalUI(){
+  document.getElementById('bal').innerText = `Balance: R${bal.toFixed(2)}`;
+  document.getElementById('wBtn').innerText = `💸 WITHDRAW R${bal.toFixed(2)} (Min R10.00)`;
+  document.getElementById('wBtn').disabled = bal < 10;
+  localStorage.setItem('shaya_bal', bal);
+}
+async function loadBalance(){
+  try{
+    const res = await fetch(`${API_URL}/api/balance?userId=${userId}`);
+    const data = await res.json();
+    if(data.balance !== undefined){bal = data.balance; updateBalUI();}
+  }catch(e){bal = Number(localStorage.getItem('shaya_bal')||0); updateBalUI();}
+}
+loadBalance();
+const VIDS=["y4h7YEGo5-I","Yi8Lcry8IzY","bvl39nmaOYU","K9Ge-bBCPjM","rpeMjYRQgxU","1pNf7Sl9w8E","9B3vAyeF6lU","nkE3yC5PQRE","KRYyPCKPTsw","GqKzS6Bn8UQ","qIl1MbWiCXA","8NeY9z6Q5vA","e4w8Bv2Q9kL","xFYQQPAOz7Y","YVkUvmDQ3HY","j5a0jTc9S10"];
+const list=document.getElementById('list');
+VIDS.forEach(id=>{list.innerHTML+=`<div class="video-box"><iframe src="https://www.youtube.com/embed/${id}" allowfullscreen></iframe><button class="earn" onclick="earn()">▶️ Watch Ad & Earn R${USER_EARN.toFixed(2)}</button></div>`;});
+async function earn(){
+  if(typeof show_12172038 !== 'function'){alert('Ad loading... wait 5 sec');return;}
+  try{
+    await show_12172038();
+    try{
+      const res = await fetch(`${API_URL}/api/earn`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,username})});
+      const data = await res.json(); bal = data.balance;
+    }catch(e){bal += USER_EARN;}
+    updateBalUI(); alert(`✅ +R${USER_EARN.toFixed(2)} earned! Saved forever.`);
+  }catch(e){alert('No ad now, try again in 30 sec');}
+}
+async function requestWithdraw(){
+  if(bal < 10) return alert(`Need R10 minimum. You have R${bal.toFixed(2)}. Watch ${Math.ceil((10-bal)/USER_EARN)} more ads!`);
+  const method = prompt("Withdraw method? Type: Capitec / FNB / PayPal / eWallet");
+  if(!method) return;
+  const account = prompt(`Enter your ${method} details:`);
+  if(!account) return;
+  try{
+    const res = await fetch(`${API_URL}/api/withdraw`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,method,account,amount:bal})});
+    const data = await res.json();
+    if(data.success){alert('✅ '+data.message); bal=0; updateBalUI();}
+    else alert('❌ '+data.error);
+  }catch(e){alert('Network error - check Render is running');}
+}
+</script>
+</body>
+</html>
