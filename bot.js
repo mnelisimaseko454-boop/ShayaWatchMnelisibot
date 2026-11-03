@@ -1,85 +1,133 @@
-const http = require('http');
 const fs = require('fs');
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const cors = require('cors');
 
 const token = process.env.BOT_TOKEN;
+const OWNER_ID = '1159481047';
 const bot = new TelegramBot(token, { polling: true });
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
 const APP_URL = 'https://mnelisimaseko454-boop.github.io/ShayaWatchMnelisibot/';
+const USER_EARN = 0.10;
+const REF_BONUS = 2.50;
+const REF_REQUIRED_ADS = 5;
+const MIN_WITHDRAW = 10.00;
 const DB_FILE = './balances.json';
-const USER_EARN = 0.10; // User gets R0.10, YOU keep R1.40 profit!
-const MIN_WITHDRAW = 10.00; // Min R10 to withdraw
+const WD_FILE = './withdrawals.json';
 
-// Load database
 let balances = {};
 let withdrawRequests = [];
-if (fs.existsSync(DB_FILE)) {
-  balances = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-}
-function saveDB() {
-  fs.writeFileSync(DB_FILE, JSON.stringify(balances, null, 2));
-}
+if (fs.existsSync(DB_FILE)) { try { balances = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); } catch(e){} }
+if (fs.existsSync(WD_FILE)) { try { withdrawRequests = JSON.parse(fs.readFileSync(WD_FILE, 'utf8')); } catch(e){} }
+function saveDB() { fs.writeFileSync(DB_FILE, JSON.stringify(balances, null, 2)); }
+function saveWD() { fs.writeFileSync(WD_FILE, JSON.stringify(withdrawRequests, null, 2)); }
 
-// Telegram /start
-bot.onText(/\/start/, (msg) => {
-  const userId = msg.from.id;
-  if (!balances[userId]) {
-    balances[userId] = { balance: 0, totalEarned: 0, username: msg.from.username || 'user' };
-    saveDB();
+// START with referral param
+bot.onText(/\/start(?:\s+(.+))?/, (msg, match) => {
+  const userId = String(msg.from.id);
+  const param = match[1] || '';
+  let referredBy = null;
+  
+  if (param.startsWith('ref_')) {
+    referredBy = param.replace('ref_', '');
+    if (referredBy === userId) referredBy = null; // can't refer self
   }
-  bot.sendMessage(msg.chat.id, `🎵 SHAYA WATCH is LIVE!\n\nYour Balance: R${balances[userId].balance.toFixed(2)}\nEarn R${USER_EARN.toFixed(2)} per ad\nMin withdraw: R${MIN_WITHDRAW}\n\nClick below:`, {
+
+  if (!balances[userId]) {
+    balances[userId] = { 
+      balance: 0, totalEarned: 0, 
+      username: msg.from.username || msg.from.first_name || 'user',
+      adsWatched: 0,
+      referredBy: referredBy,
+      referralPaid: false,
+      referrals: [] // list of userIds they referred
+    };
+    // Add to referrer's list
+    if (referredBy && balances[referredBy]) {
+      balances[referredBy].referrals.push(userId);
+    }
+    saveDB();
+    if (referredBy) {
+      bot.sendMessage(referredBy, `👤 New referral! @${msg.from.username || msg.from.first_name} joined via your link. You'll get R${REF_BONUS} when they watch ${REF_REQUIRED_ADS} ads!`);
+    }
+  }
+
+  bot.sendMessage(msg.chat.id, `🎵 SHAYA WATCH\n\nBalance: R${balances[userId].balance.toFixed(2)}\nEarn R${USER_EARN}/ad\nRefer friends: R${REF_BONUS} per friend (after they watch ${REF_REQUIRED_ADS} ads)\n\n🔗 Your referral link:\nhttps://t.me/ShayaWatchMnelisibot?start=ref_${userId}\n\nClick to open:`, {
     reply_markup: { inline_keyboard: [[{ text: "▶️ OPEN SHAYA WATCH", url: APP_URL }]] }
   });
 });
 
-// API: Get balance
 app.get('/api/balance', (req, res) => {
-  const userId = req.query.userId;
-  if (!userId) return res.json({ balance: 0 });
-  if (!balances[userId]) balances[userId] = { balance: 0, totalEarned: 0 };
-  res.json(balances[userId]);
+  const userId = String(req.query.userId || '');
+  const data = balances[userId] || { balance: 0, totalEarned: 0, adsWatched: 0, referrals: [] };
+  // Count referrals earned
+  let refEarned = 0;
+  let refPending = 0;
+  (data.referrals || []).forEach(refId => {
+    const refUser = balances[refId];
+    if (refUser && refUser.adsWatched >= REF_REQUIRED_ADS) refEarned++;
+    else refPending++;
+  });
+  res.json({ ...data, refEarned, refPending, refBonus: REF_BONUS, refRequired: REF_REQUIRED_ADS });
 });
 
-// API: Add earning
 app.post('/api/earn', (req, res) => {
-  const { userId, username } = req.body;
+  const userId = String(req.body.userId || '');
+  const username = req.body.username || 'user';
+  const referredBy = req.body.referredBy || null;
   if (!userId) return res.json({ error: 'no user' });
-  if (!balances[userId]) balances[userId] = { balance: 0, totalEarned: 0, username: username || 'user' };
+  
+  if (!balances[userId]) {
+    balances[userId] = { balance: 0, totalEarned: 0, username, adsWatched: 0, referredBy, referralPaid: false, referrals: [] };
+    if (referredBy && balances[referredBy] && referredBy !== userId) {
+      balances[referredBy].referrals = balances[referredBy].referrals || [];
+      if (!balances[referredBy].referrals.includes(userId)) balances[referredBy].referrals.push(userId);
+    }
+  }
   
   balances[userId].balance += USER_EARN;
   balances[userId].totalEarned += USER_EARN;
-  balances[userId].username = username || balances[userId].username;
+  balances[userId].adsWatched = (balances[userId].adsWatched || 0) + 1;
+  balances[userId].username = username;
+
+  // Check referral bonus - if this user just reached 5 ads
+  if (balances[userId].adsWatched === REF_REQUIRED_ADS && balances[userId].referredBy && !balances[userId].referralPaid) {
+    const referrerId = String(balances[userId].referredBy);
+    if (balances[referrerId]) {
+      balances[referrerId].balance += REF_BONUS;
+      balances[referrerId].totalEarned += REF_BONUS;
+      balances[userId].referralPaid = true;
+      saveDB();
+      bot.sendMessage(referrerId, `🎉 Referral bonus! Your friend @${username} watched ${REF_REQUIRED_ADS} ads. You earned R${REF_BONUS}!`);
+      bot.sendMessage(userId, `✅ You helped your friend earn R${REF_BONUS}! Keep watching to earn more!`);
+    }
+  }
+
   saveDB();
   res.json(balances[userId]);
 });
 
-// API: Request withdrawal
 app.post('/api/withdraw', (req, res) => {
-  const { userId, method, account, amount } = req.body;
+  const userId = String(req.body.userId || '');
+  const { method, account } = req.body;
   const user = balances[userId];
-  if (!user || user.balance < MIN_WITHDRAW) {
-    return res.json({ error: `Need R${MIN_WITHDRAW} minimum. You have R${user ? user.balance.toFixed(2) : '0'}` });
-  }
-  withdrawRequests.push({ userId, method, account, amount: user.balance, date: new Date().toISOString(), username: user.username });
-  user.balance = 0; // Reset after request
+  if (!user || user.balance < MIN_WITHDRAW) return res.json({ error: `Need R${MIN_WITHDRAW}. You have R${user ? user.balance.toFixed(2) : '0'}` });
+  const amount = user.balance;
+  withdrawRequests.push({ userId, username: user.username, method, account, amount, date: new Date().toISOString() });
+  saveWD();
+  user.balance = 0;
   saveDB();
-  fs.writeFileSync('./withdrawals.json', JSON.stringify(withdrawRequests, null, 2));
-  
-  // Notify YOU (owner) on Telegram
-  bot.sendMessage(process.env.OWNER_ID || Object.keys(balances)[0], `💰 NEW WITHDRAWAL!\nUser: ${user.username} (${userId})\nAmount: R${amount}\nMethod: ${method}\nAccount: ${account}`);
-  
-  res.json({ success: true, message: 'Withdrawal request sent! You will be paid within 24h' });
+  bot.sendMessage(OWNER_ID, `💰 WITHDRAWAL\nUser: @${user.username} (${userId})\nAmount: R${amount.toFixed(2)}\nMethod: ${method}\nAccount: ${account}`);
+  res.json({ success: true, message: `Withdrawal R${amount.toFixed(2)} requested! Paid in 24h` });
 });
 
-// Health
-app.get('/', (req, res) => res.send('Bot + API running'));
+bot.onText(/\/paid (.+)/, (msg, match) => {
+  if (String(msg.from.id) !== OWNER_ID) return;
+  bot.sendMessage(match[1], `✅ Paid! Check account.`);
+});
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`API on ${PORT}`));
-console.log('Bot running...');
+app.get('/', (req, res) => res.send(`API running. Users: ${Object.keys(balances).length}`));
+app.listen(process.env.PORT || 10000, () => console.log('API running'));
