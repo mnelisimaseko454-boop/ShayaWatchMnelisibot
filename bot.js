@@ -8,7 +8,7 @@ const APP_URL = 'https://mnelisimaseko454-boop.github.io/ShayaWatchMnelisibot/';
 bot.onText(/\/start/, (msg) => {
   bot.sendMessage(msg.chat.id, "🎵 SHAYA WATCH is LIVE!\n\nBalance: Watch ads to earn R0.50 each\n\nClick button below:", {
     reply_markup: {
-      inline_keyboard: [[{ text: "▶️ OPEN SHAYA WATCH", web_app: { url: APP_URL } }]]
+      inline_keyboard: [[{ text: "▶️ OPEN SHAYA WATCH", url: APP_URL }]]
     }
   });
 });
