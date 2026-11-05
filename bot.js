@@ -42,8 +42,7 @@ bot.onText(/\/start(?:\s+(.*))?/, (msg, match) => {
     parse_mode: 'Markdown',
     reply_markup: {
       inline_keyboard: [
-        [{ text: '🚀 OPEN SHAYA WATCH', web_app: { url: APP_URL } }],
-        [{ text: '🔗 Open via Mini App Link', url: MINIAPP_LINK }]
+        [{ text: '🚀 OPEN SHAYA WATCH', url: MINIAPP_LINK }]
       ]
     }
   });
