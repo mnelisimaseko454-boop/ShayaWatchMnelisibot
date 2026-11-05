@@ -61,6 +61,10 @@ app.get('/api/monetag-stats', (req, res) => {
 
 app.post('/api/earn', (req, res) => {
   const userId = String(req.body.userId || '');
+    // OWNER CANNOT EARN - Protects from Monetag self-click ban
+  if (userId === OWNER_ID) {
+    return res.json({ balance: 0, totalEarned: 0, adsWatched: 0, referrals: [], ownerBlocked: true, message: 'Owner test mode - no earning' });
+  }
   const username = req.body.username || 'user';
   const referredBy = req.body.referredBy || null;
   if (!userId) return res.json({ error: 'no user' });
