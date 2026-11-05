@@ -1,0 +1,13 @@
+{
+  "users": {
+    "123456": {
+      "id": "123456",
+      "balance": 0,
+      "totalWatched": 0,
+      "totalEarned": 0,
+      "lastRewardAt": 0,
+      "username": "testuser",
+      "firstName": "Test"
+    }
+  }
+}
