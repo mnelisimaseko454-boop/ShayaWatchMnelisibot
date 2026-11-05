@@ -22,7 +22,7 @@ self.lary = ""
 importScripts('https://3nbf4.com/act/files/service-worker.min.js?r=sw')`);
 });
 
-// === SERVE YOUR FIXED index.html (YouTube + Monetag) ===
+// === SERVE YOUR FIXED index.html (Monetag) ===
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
