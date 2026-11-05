@@ -81,7 +81,7 @@ app.get('/api/monetag-stats', (req,res)=>{
 app.post('/api/withdraw', (req, res) => {
   const { userId, method, account, amount } = req.body;
   const u = users[userId];
-  if(!u || u.balance < 20) return res.json({ success: false, error: 'Need R20 minimum' });
+  if(!u || u.balance < 0.02) return res.json({ success: false, error: 'Need R0.02 minimum' });
   u.balance = 0;
   console.log(`WITHDRAW: ${userId} ${method} ${account} R${amount}`);
   res.json({ success: true, message: 'Withdraw request received! We will pay within 24h.' });
