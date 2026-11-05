@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const cors = require('cors');
@@ -8,20 +9,21 @@ const bot = new TelegramBot(token, { polling: true });
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname));
 
-// Monetag Push - sw.js for verification
+// Monetag Push - sw.js - CORRECT ZONE 12197812
 app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.send(`self.options = { "domain": "3nbf4.com", "zoneId": 12190939 };
+  res.send(`self.options = { "domain": "5gvci.com", "zoneId": 12197812 };
 self.lary = "";
-importScripts('https://3nbf4.com/act/files/service-worker.min.js?r=sw');`);
+importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw');`);
 });
 
 const APP_URL = 'https://shayawatchmnelisibot-4.onrender.com/';
-const USER_EARN = 0.10;
-const REF_BONUS = 2.50;
-const REF_REQUIRED_ADS = 5;
-const MIN_WITHDRAW = 10.00;
+const USER_EARN = 0.02;
+const REF_BONUS = 0.50;
+const REF_REQUIRED_ADS = 10;
+const MIN_WITHDRAW = 20.00;
 const DB_FILE = './balances.json';
 const WD_FILE = './withdrawals.json';
 let balances = {};
@@ -30,7 +32,7 @@ if (fs.existsSync(DB_FILE)) { try { balances = JSON.parse(fs.readFileSync(DB_FIL
 if (fs.existsSync(WD_FILE)) { try { withdrawRequests = JSON.parse(fs.readFileSync(WD_FILE, 'utf8')); } catch(e){} }
 function saveDB() { fs.writeFileSync(DB_FILE, JSON.stringify(balances, null, 2)); }
 function saveWD() { fs.writeFileSync(WD_FILE, JSON.stringify(withdrawRequests, null, 2)); }
-// START with referral param
+
 bot.onText(/\/start(?:\s+(.+))?/, (msg, match) => {
   const userId = String(msg.from.id);
   const param = match[1] || '';
@@ -44,6 +46,7 @@ bot.onText(/\/start(?:\s+(.+))?/, (msg, match) => {
   }
   bot.sendMessage(msg.chat.id, `🎵 SHAYA WATCH\n\nBalance: R${balances[userId].balance.toFixed(2)}\nEarn R${USER_EARN}/ad\nRefer friends: R${REF_BONUS} per friend (after they watch ${REF_REQUIRED_ADS} ads)\n\n🔗 Your referral link:\nhttps://t.me/ShayaWatchMnelisibot?start=ref_${userId}\n\nClick to open:`, { reply_markup: { inline_keyboard: [[{ text: "▶️ OPEN SHAYA WATCH", url: APP_URL }]] } });
 });
+
 app.get('/api/balance', (req, res) => {
   const userId = String(req.query.userId || '');
   const data = balances[userId] || { balance: 0, totalEarned: 0, adsWatched: 0, referrals: [] };
@@ -51,6 +54,11 @@ app.get('/api/balance', (req, res) => {
   (data.referrals || []).forEach(refId => { const refUser = balances[refId]; if (refUser && refUser.adsWatched >= REF_REQUIRED_ADS) refEarned++; else refPending++; });
   res.json({ ...data, refEarned, refPending, refBonus: REF_BONUS, refRequired: REF_REQUIRED_ADS });
 });
+
+app.get('/api/monetag-stats', (req, res) => {
+  res.json({ total: 0, today: 0, count: 0 });
+});
+
 app.post('/api/earn', (req, res) => {
   const userId = String(req.body.userId || '');
   const username = req.body.username || 'user';
@@ -70,6 +78,7 @@ app.post('/api/earn', (req, res) => {
   }
   saveDB(); res.json(balances[userId]);
 });
+
 app.post('/api/withdraw', (req, res) => {
   const userId = String(req.body.userId || '');
   const { method, account } = req.body;
@@ -81,6 +90,13 @@ app.post('/api/withdraw', (req, res) => {
   bot.sendMessage(OWNER_ID, `💰 WITHDRAWAL\nUser: @${user.username} (${userId})\nAmount: R${amount.toFixed(2)}\nMethod: ${method}\nAccount: ${account}`);
   res.json({ success: true, message: `Withdrawal R${amount.toFixed(2)} requested! Paid in 24h` });
 });
+
 bot.onText(/\/paid (.+)/, (msg, match) => { if (String(msg.from.id) !== OWNER_ID) return; bot.sendMessage(match[1], `✅ Paid! Check account.`); });
-app.get('/', (req, res) => res.send(`API running. Users: ${Object.keys(balances).length}`));
+
+app.get('/', (req, res) => {
+  const indexPath = path.join(__dirname, 'index.html');
+  if (fs.existsSync(indexPath)) return res.sendFile(indexPath);
+  res.send(`API running. Users: ${Object.keys(balances).length}`);
+});
+
 app.listen(process.env.PORT || 10000, () => console.log('API running'));
