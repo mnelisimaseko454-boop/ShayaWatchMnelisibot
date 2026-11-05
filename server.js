@@ -35,7 +35,3 @@ app.get('/privacy', (req,res)=>{ res.send('<h1>Privacy - Shaya Watch Bot</h1><p>
 
 app.listen(PORT, ()=> console.log('Shaya Watch Live on '+PORT));
 
-
-Delete this line only if it's in your file now:
-js
-app.get('/tiktok-developers-site-verification', ...
