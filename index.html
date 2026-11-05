@@ -53,13 +53,11 @@ button{border:none;padding:14px;width:100%;border-radius:12px;font-weight:bold;m
 </div>
 </div>
 <div id="videos" class="section">
-<p style="font-size:12px;color:#888">Watch video, then earn</p>
+<p style="font-size:12px;color:#888">Watch video, then earn - video stays inside app, no YouTube app</p>
 <div id="list"></div>
 </div>
 <script>
-const tg=Telegram.WebApp;
-tg.ready();
-tg.expand();
+const tg=Telegram.WebApp; tg.ready(); tg.expand();
 const API_URL='https://shayawatchmnelisibot-4.onrender.com';
 const USER_EARN=0.02;
 let userId=tg?.initDataUnsafe?.user?.id;
@@ -69,97 +67,30 @@ let referredBy=null;
 if(startParam.startsWith('ref_')) referredBy=startParam.replace('ref_','');
 if(!userId){userId=localStorage.getItem('shaya_userId')||'guest_'+Math.random().toString(36).substr(2,9);localStorage.setItem('shaya_userId',userId);}
 let sdkReady=false;
-function initSDK(){
-if(typeof show_12172038==='function'){
-sdkReady=true;
-document.getElementById('sdkStatus').innerText='✅ Ads Ready - Earning Active';
-document.getElementById('sdkStatus').style.color='#00ff88';
-} else {
-document.getElementById('sdkStatus').innerText='⏳ Loading ads... disable adblock';
-setTimeout(initSDK, 1000);
-}
-}
+function initSDK(){ if(typeof show_12172038==='function'){ sdkReady=true; document.getElementById('sdkStatus').innerText='✅ Ads Ready - Earning Active'; document.getElementById('sdkStatus').style.color='#00ff88'; } else { document.getElementById('sdkStatus').innerText='⏳ Loading ads... disable adblock'; setTimeout(initSDK, 1000); } }
 setTimeout(initSDK, 1200);
-function showTab(t){
-document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-document.querySelectorAll('.tab button').forEach(b=>b.classList.remove('active'));
-document.getElementById(t).classList.add('active');
-document.getElementById(t==='quick'?'tab1':'tab2').classList.add('active');
-}
-function updateBalUI(d){
-const bal=d.balance||0;
-const ads=d.adsWatched||0;
-document.getElementById('bal').innerText=`Balance: R${bal.toFixed(2)}`;
-document.getElementById('adCount').innerText=ads;
-document.getElementById('wBtn').innerText=`💸 WITHDRAW R${bal.toFixed(2)} (Min R20.00)`;
-document.getElementById('wBtn').disabled=bal<20;
-document.getElementById('refLink').value=`https://t.me/ShayaWatchMnelisibot?start=ref_${userId}`;
-document.getElementById('refStats').innerText=`👥 ${d.refEarned||0} paid, ${d.refPending||0} pending • Your progress: ${ads}/10`;
-}
+function showTab(t){ document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); document.querySelectorAll('.tab button').forEach(b=>b.classList.remove('active')); document.getElementById(t).classList.add('active'); document.getElementById(t==='quick'?'tab1':'tab2').classList.add('active'); }
+function updateBalUI(d){ const bal=d.balance||0; const ads=d.adsWatched||0; document.getElementById('bal').innerText=`Balance: R${bal.toFixed(2)}`; document.getElementById('adCount').innerText=ads; document.getElementById('wBtn').innerText=`💸 WITHDRAW R${bal.toFixed(2)} (Min R20.00)`; document.getElementById('wBtn').disabled=bal<20; document.getElementById('refLink').value=`https://t.me/ShayaWatchMnelisibot?start=ref_${userId}`; document.getElementById('refStats').innerText=`👥 ${d.refEarned||0} paid, ${d.refPending||0} pending • Your progress: ${ads}/10`; }
 async function loadBalance(){try{const res=await fetch(`${API_URL}/api/balance?userId=${userId}`);const data=await res.json();updateBalUI(data);}catch(e){}}
 async function loadMonetagStats(){try{const res=await fetch(`${API_URL}/api/monetag-stats`);const d=await res.json();document.getElementById('monetagTotal').innerText=`💰 Monetag Total: $${d.total.toFixed(4)} | Today: $${d.today.toFixed(4)} | Ads: ${d.count}`;}catch(e){}}
-loadBalance();
-loadMonetagStats();
-setInterval(loadMonetagStats, 15000);
+loadBalance(); loadMonetagStats(); setInterval(loadMonetagStats, 15000);
 function copyRef(){navigator.clipboard.writeText(document.getElementById('refLink').value);alert('✅ Link copied! Share on WhatsApp!');}
+
+// VIDEOS - PLAY INSIDE MINI APP, NO REDIRECT
+function playInline(id, el){
+  const box = el.closest('.video-box');
+  box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1" style="width:100%;height:180px;border:none;border-radius:10px;" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe><button class="earn" onclick="earn()">▶️ Watch Ad & Earn R0.02</button><button class="earn-popup" style="padding:10px;margin-top:6px" onclick="earnPopup()">🛍️ Open Offer +R0.02</button>`;
+  if(window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.expand();
+}
 const VIDS=["y4h7YEGo5-I","Yi8Lcry8IzY","bvl39nmaOYU","K9Ge-bBCPjM","rpeMjYRQgxU","1pNf7Sl9w8E","9B3vAyeF6lU","nkE3yC5PQRE","KRYyPCKPTsw","GqKzS6Bn8UQ","qIl1MbWiCXA","8NeY9z6Q5vA","e4w8Bv2Q9kL","xFYQQPAOz7Y","YVkUvmDQ3HY","j5a0jTc9S10"];
 const list=document.getElementById('list');
 VIDS.forEach(id=>{
-list.innerHTML+=`<div class="video-box"><img class="video-thumb" src="https://img.youtube.com/vi/${id}/hqdefault.jpg" onclick="window.open('https://youtu.be/${id}','_blank')"><button class="earn" onclick="earn()">▶️ Watch Ad & Earn R0.02</button><button class="earn-popup" style="padding:10px;margin-top:6px" onclick="earnPopup()">🛍️ Open Offer +R0.02</button></div>`;
+  list.innerHTML+=`<div class="video-box"><div style="position:relative"><img class="video-thumb" src="https://img.youtube.com/vi/${id}/hqdefault.jpg" onclick="playInline('${id}', this)"><div onclick="playInline('${id}', this.previousElementSibling)" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);border-radius:50%;width:60px;height:60px;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;">▶️</div></div><button class="earn" onclick="earn()">▶️ Watch Ad & Earn R0.02</button><button class="earn-popup" style="padding:10px;margin-top:6px" onclick="earnPopup()">🛍️ Open Offer +R0.02</button></div>`;
 });
-async function earn(){
-if(typeof show_12172038!=='function'){ alert('Ad SDK not ready. Make sure Rewarded Interstitial is ACTIVATED (green) in Monetag dashboard 3559108 and wait 2 mins'); return; }
-const btn=document.getElementById('btnInter');
-const origText=btn.innerText;
-btn.disabled=true;
-btn.innerText='⏳ Loading Ad...';
-try{
-await show_12172038().then(async ()=>{
-btn.innerText='✅ Crediting...';
-const res=await fetch(`${API_URL}/api/earn`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,username,referredBy, source:'rewarded_interstitial'})});
-const data=await res.json();
-updateBalUI(data);
-alert('You have seen an ad! +R'+USER_EARN.toFixed(2));
-loadMonetagStats();
-});
-}catch(e){
-try{
-await show_12172038('pop').then(async ()=>{
-const res=await fetch(`${API_URL}/api/earn`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,username,referredBy, source:'rewarded_popup_fallback'})});
-const data=await res.json();
-updateBalUI(data);
-alert('You have seen an ad! +R'+USER_EARN.toFixed(2));
-loadMonetagStats();
-});
-}catch(e2){ alert('No ad available right now in ZA. Try again in 15 sec.'); }
-}finally{ btn.disabled=false; btn.innerText=origText; }
-}
-async function earnPopup(){
-if(typeof show_12172038!=='function'){alert('Ad SDK loading...');return;}
-const btn=document.getElementById('btnPop');
-const origText=btn.innerText;
-btn.disabled=true;
-btn.innerText='⏳ Opening Offer...';
-try{
-await show_12172038('pop').then(async ()=>{
-btn.innerText='✅ Crediting...';
-const res=await fetch(`${API_URL}/api/earn`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,username,referredBy, source:'rewarded_popup'})});
-const data=await res.json();
-updateBalUI(data);
-alert('You have seen an ad! Extra +R'+USER_EARN.toFixed(2));
-loadMonetagStats();
-});
-}catch(e){ alert('Offer not ready. Make sure Rewarded Popup is Activated in Monetag and wait 10 mins. Disable adblock!'); }
-finally{ btn.disabled=false; btn.innerText=origText; }
-}
-async function requestWithdraw(){
-const balText=document.getElementById('bal').innerText;
-const bal=parseFloat(balText.replace(/[^0-9.]/g,''))||0;
-if(bal<20) return alert(`Need R20 minimum. You have R${bal.toFixed(2)}`);
-const method=prompt("Method? Capitec / FNB / PayPal / eWallet");if(!method)return;
-const account=prompt(`Enter ${method} details:`);if(!account)return;
-try{const res=await fetch(`${API_URL}/api/withdraw`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,method,account,amount:bal})});const data=await res.json();if(data.success){alert('✅ '+data.message);loadBalance();}else alert('❌ '+data.error);}catch(e){alert('Network error');}
-}
+
+async function earn(){ if(typeof show_12172038!=='function'){ alert('Ad SDK not ready. Make sure Rewarded Interstitial is ACTIVATED (green) in Monetag dashboard 3559108 and wait 2 mins'); return; } const btn=document.getElementById('btnInter'); const origText=btn.innerText; btn.disabled=true; btn.innerText='⏳ Loading Ad...'; try{ await show_12172038().then(async ()=>{ btn.innerText='✅ Crediting...'; const res=await fetch(`${API_URL}/api/earn`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,username,referredBy, source:'rewarded_interstitial'})}); const data=await res.json(); updateBalUI(data); alert('You have seen an ad! +R'+USER_EARN.toFixed(2)); loadMonetagStats(); }); }catch(e){ try{ await show_12172038('pop').then(async ()=>{ const res=await fetch(`${API_URL}/api/earn`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,username,referredBy, source:'rewarded_popup_fallback'})}); const data=await res.json(); updateBalUI(data); alert('You have seen an ad! +R'+USER_EARN.toFixed(2)); loadMonetagStats(); }); }catch(e2){ alert('No ad available right now in ZA. Try again in 15 sec.'); } }finally{ btn.disabled=false; btn.innerText=origText; } }
+async function earnPopup(){ if(typeof show_12172038!=='function'){alert('Ad SDK loading...');return;} const btn=document.getElementById('btnPop'); const origText=btn.innerText; btn.disabled=true; btn.innerText='⏳ Opening Offer...'; try{ await show_12172038('pop').then(async ()=>{ btn.innerText='✅ Crediting...'; const res=await fetch(`${API_URL}/api/earn`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,username,referredBy, source:'rewarded_popup'})}); const data=await res.json(); updateBalUI(data); alert('You have seen an ad! Extra +R'+USER_EARN.toFixed(2)); loadMonetagStats(); }); }catch(e){ alert('Offer not ready. Make sure Rewarded Popup is Activated in Monetag and wait 10 mins. Disable adblock!'); } finally{ btn.disabled=false; btn.innerText=origText; } }
+async function requestWithdraw(){ const balText=document.getElementById('bal').innerText; const bal=parseFloat(balText.replace(/[^0-9.]/g,''))||0; if(bal<20) return alert(`Need R20 minimum. You have R${bal.toFixed(2)}`); const method=prompt("Method? Capitec / FNB / PayPal / eWallet");if(!method)return; const account=prompt(`Enter ${method} details:`);if(!account)return; try{const res=await fetch(`${API_URL}/api/withdraw`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,method,account,amount:bal})});const data=await res.json();if(data.success){alert('✅ '+data.message);loadBalance();}else alert('❌ '+data.error);}catch(e){alert('Network error');} }
 </script>
 </body>
 </html>
