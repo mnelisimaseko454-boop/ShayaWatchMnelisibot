@@ -1,6 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const TOKEN = process.env.BOT_TOKEN;
 const APP_URL = 'https://shayawatchmnelisibot-4.onrender.com/';
@@ -10,7 +11,7 @@ const bot = new TelegramBot(TOKEN, { polling: true });
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(__dirname));
 
 let users = {};
 let monetagStats = { total: 0, today: 0, count: 0, lastReset: new Date().toDateString() };
@@ -60,12 +61,10 @@ app.post('/api/earn', (req, res) => {
   if(!users[userId]) users[userId] = { balance: 0, adsWatched: 0, refEarned: 0, refPending: 0, username: username||'guest', referredBy };
   users[userId].balance += 0.02;
   users[userId].adsWatched += 1;
-  // Monetag estimate - $0.005 per ad view
   monetagStats.total += 0.005;
   monetagStats.today += 0.005;
   monetagStats.count += 1;
 
-  // Referral bonus: if user completes 10 ads, pay referrer
   if(users[userId].adsWatched === 10 && users[userId].referredBy && users[users[userId].referredBy]){
     const refId = users[userId].referredBy;
     users[refId].balance += 0.50;
@@ -89,7 +88,10 @@ app.post('/api/withdraw', (req, res) => {
   res.json({ success: true, message: 'Withdraw request received! We will pay within 24h.' });
 });
 
-app.get('/', (req,res)=> res.send('API running'));
+// THIS IS THE FIX - Serve index.html at root, not "API running"
+app.get('/', (req,res)=> res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/health', (req,res)=> res.send('API running'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, ()=> console.log('Server on '+PORT));
+
