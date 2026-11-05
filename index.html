@@ -1,91 +1,145 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SHAYA WATCH</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src='//libtl.com/sdk.js' data-zone='12172038' data-sdk='show_12172038'></script>
-<script src="https://5gvci.com/act/files/tag.min.js?z=12197812" data-cfasync="false" async></script>
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 <style>
-body{background:#000;color:#fff;font-family:Arial;padding:12px;text-align:center}
-#bal{color:#00ff88;font-size:26px;font-weight:bold;margin:8px 0}
-button{border:none;padding:14px;width:100%;border-radius:12px;font-weight:bold;margin-top:10px;cursor:pointer}
-.earn{background:#ff004f;color:#fff}
-.earn-big{background:#ff004f;color:#fff;padding:20px;font-size:18px;box-shadow:0 0 15px #ff004f88}
-.earn-popup{background:#00e676;color:#000;padding:16px;font-size:15px;margin-top:8px}
-.withdraw{background:#00c853;color:#fff;margin:12px 0}
-.withdraw:disabled{background:#333;color:#888}
-.ref-box{background:#1a1a2e;border:1px solid #00ff88;border-radius:12px;padding:12px;margin:15px 0}
-.card{background:#111;border-radius:14px;padding:12px;margin:15px 0;border:1px solid #222}
-.tab{display:flex;gap:8px;margin:15px 0}
-.tab button{flex:1;padding:12px;background:#222;color:#fff;border-radius:10px}
-.tab button.active{background:#00ff88;color:#000}
-.video-box{background:#111;border-radius:14px;padding:10px;margin:12px 0}
-.video-thumb{width:100%;height:180px;border-radius:10px;object-fit:cover;cursor:pointer}
-.section{display:none}.section.active{display:block}
-#sdkStatus{font-size:11px;color:#888}
+  *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
+  body{background:#0a0a0a;color:#fff;min-height:100vh;padding:16px;padding-bottom:90px}
+  .header{text-align:center;padding:14px 0 6px}
+  .logo{font-size:32px;font-weight:900;letter-spacing:1px}
+  .logo span{color:#FFD700}
+  .sub{color:#aaa;font-size:13px;margin-top:4px}
+  .balance-card{background:linear-gradient(135deg,#FFD700,#FF8C00);color:#000;border-radius:20px;padding:20px;margin:16px 0;text-align:center}
+  .balance-card small{font-size:13px;font-weight:600;opacity:.7}
+  .balance-card h1{font-size:42px;margin:4px 0}
+  .stats{display:flex;gap:10px;margin-bottom:16px}
+  .stat{flex:1;background:#1a1a1a;border-radius:14px;padding:12px;text-align:center}
+  .stat b{font-size:18px;display:block}
+  .stat span{font-size:11px;color:#999}
+  .video-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+  .video{background:#1a1a1a;border-radius:16px;overflow:hidden}
+  .video img{width:100%;height:110px;object-fit:cover;display:block}
+  .video div{padding:10px}
+  .video p{font-size:13px;font-weight:600;line-height:1.3}
+  .video small{color:#999;font-size:11px}
+  .watch-btn{width:100%;background:#FFD700;color:#000;border:none;padding:18px;border-radius:16px;font-size:18px;font-weight:900;cursor:pointer;margin-top:6px}
+  .watch-btn:disabled{opacity:.5}
+  .withdraw-btn{width:100%;background:#222;color:#fff;border:1px solid #333;padding:14px;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px}
+  .note{font-size:12px;color:#888;text-align:center;margin-top:12px;line-height:1.5}
+  #toast{position:fixed;left:16px;right:16px;bottom:20px;background:#FFD700;color:#000;padding:14px;border-radius:12px;font-weight:800;text-align:center;display:none;z-index:99}
 </style>
 </head>
 <body>
-<h2>🎵 SHAYA WATCH</h2>
-<p id="bal">Balance: R0.00</p>
-<p id="monetagTotal" style="color:#ffaa00;font-size:12px">💰 Monetag Total: $0.0000 | Today: $0.0000</p>
-<p style="color:#888;font-size:12px">Ads watched: <span id="adCount">0</span>/10 for referral bonus | <span id="sdkStatus">⏳ Loading Ads...</span></p>
-<button id="wBtn" class="withdraw" onclick="requestWithdraw()">💸 WITHDRAW (Min R20.00)</button>
-<div class="ref-box">
-<b>🔗 Earn R0.50 per friend!</b>
-<p style="font-size:11px">Friend must watch 10 ads, you get R0.50</p>
-<input id="refLink" style="width:92%;padding:8px;border-radius:8px;border:none;font-size:11px" readonly>
-<button onclick="copyRef()" style="background:#00ff88;color:#000;padding:7px;margin-top:5px">📋 COPY LINK</button>
-<p id="refStats" style="font-size:12px;margin-top:6px"></p>
+
+<div class="header">
+  <div class="logo">SHAYA <span>WATCH</span></div>
+  <div class="sub">Trending SA Videos • Music • Lifestyle • Culture</div>
 </div>
-<div class="tab">
-<button id="tab1" class="active" onclick="showTab('quick')">⚡ ADS ONLY</button>
-<button id="tab2" onclick="showTab('videos')">🎬 VIDEOS + ADS</button>
+
+<div class="balance-card">
+  <small>YOUR BALANCE</small>
+  <h1 id="balance">R0.00</h1>
+  <small id="watchedText">0 ads watched • R0.02 per ad</small>
 </div>
-<div id="quick" class="section active">
-<div class="card">
-<h3 style="margin:0">⚡ Quick Earn</h3>
-<p style="font-size:12px;color:#aaa">Watch ads and earn daily</p>
-<button id="btnInter" class="earn-big" onclick="earn()">▶️ WATCH AD & EARN R0.02</button>
-<button id="btnPop" class="earn-popup" onclick="earnPopup()">🛍️ OPEN OFFER (Shein/Temu) +R0.02</button>
+
+<div class="stats">
+  <div class="stat"><b id="totalWatched">0</b><span>Watched</span></div>
+  <div class="stat"><b>R50</b><span>Min Withdraw</span></div>
+  <div class="stat"><b>R0.02</b><span>Per Ad</span></div>
 </div>
-</div>
-<div id="videos" class="section">
-<p style="font-size:12px;color:#888">Watch video, then earn - video stays inside app, no YouTube app</p>
-<div id="list"></div>
-</div>
+
+<div class="video-grid" id="videos"></div>
+
+<button class="watch-btn" id="watchBtn">▶️ WATCH AD + R0.02</button>
+<button class="withdraw-btn" id="withdrawBtn">💳 Withdraw (Min R50)</button>
+
+<p class="note">Watch the full ad to get rewarded.<br>Balance updates instantly. Withdraw via Capitec / Bank / Airtime.</p>
+<div id="toast"></div>
+
 <script>
-const tg=Telegram.WebApp; tg.ready(); tg.expand();
-const API_URL='https://shayawatchmnelisibot-4.onrender.com';
-const USER_EARN=0.02;
-let userId=tg?.initDataUnsafe?.user?.id;
-let username=tg?.initDataUnsafe?.user?.username||tg?.initDataUnsafe?.user?.first_name||'guest';
-let startParam=tg?.initDataUnsafe?.start_param||'';
-let referredBy=null;
-if(startParam.startsWith('ref_')) referredBy=startParam.replace('ref_','');
-if(!userId){userId=localStorage.getItem('shaya_userId')||'guest_'+Math.random().toString(36).substr(2,9);localStorage.setItem('shaya_userId',userId);}
-function initSDK(){ if(typeof show_12172038==='function'){ document.getElementById('sdkStatus').innerText='✅ Ads Ready - Earning Active'; document.getElementById('sdkStatus').style.color='#00ff88'; } else { document.getElementById('sdkStatus').innerText='⏳ Loading ads... disable adblock'; setTimeout(initSDK, 1000); } }
-setTimeout(initSDK, 1200);
-function showTab(t){ document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); document.querySelectorAll('.tab button').forEach(b=>b.classList.remove('active')); document.getElementById(t).classList.add('active'); document.getElementById(t==='quick'?'tab1':'tab2').classList.add('active'); }
-function updateBalUI(d){ const bal=d.balance||0; const ads=d.adsWatched||0; document.getElementById('bal').innerText=`Balance: R${bal.toFixed(2)}`; document.getElementById('adCount').innerText=ads; document.getElementById('wBtn').innerText=`💸 WITHDRAW R${bal.toFixed(2)} (Min R20.00)`; document.getElementById('wBtn').disabled=bal<20; document.getElementById('refLink').value=`https://t.me/ShayaWatchMnelisibot?start=ref_${userId}`; document.getElementById('refStats').innerText=`👥 ${d.refEarned||0} paid, ${d.refPending||0} pending • Your progress: ${ads}/10`; }
-async function loadBalance(){try{const res=await fetch(`${API_URL}/api/balance?userId=${userId}`);const data=await res.json();updateBalUI(data);}catch(e){}}
-async function loadMonetagStats(){try{const res=await fetch(`${API_URL}/api/monetag-stats`);const d=await res.json();document.getElementById('monetagTotal').innerText=`💰 Monetag Total: $${d.total.toFixed(4)} | Today: $${d.today.toFixed(4)} | Ads: ${d.count}`;}catch(e){}}
-loadBalance(); loadMonetagStats(); setInterval(loadMonetagStats, 15000);
-function copyRef(){navigator.clipboard.writeText(document.getElementById('refLink').value);alert('✅ Link copied! Share on WhatsApp!');}
-function playInline(id, el){
-  const box = el.closest('.video-box');
-  box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1" style="width:100%;height:180px;border:none;border-radius:10px;" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe><button class="earn" onclick="earn()">▶️ Watch Ad & Earn R0.02</button><button class="earn-popup" style="padding:10px;margin-top:6px" onclick="earnPopup()">🛍️ Open Offer +R0.02</button>`;
-  if(window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.expand();
+const tg = window.Telegram.WebApp;
+tg.ready(); tg.expand();
+const user = tg.initDataUnsafe?.user || { id: 123456, first_name: 'Guest', username: 'guest' };
+const userId = String(user.id);
+
+// === ADSGRAM CONFIG - YOUR REAL BLOCK ===
+const ADSGRAM_BLOCK_ID = "58189";
+const AdController = window.Adsgram ? window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID }) : null;
+
+let balance = 0, totalWatched = 0;
+
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); }
+
+async function loadUser(){
+  try{
+    const r = await fetch(`/api/user/${userId}`);
+    const d = await r.json();
+    balance=d.balance; totalWatched=d.totalWatched;
+    updateUI();
+  }catch(e){}
 }
-const VIDS=["y4h7YEGo5-I","Yi8Lcry8IzY","bvl39nmaOYU","K9Ge-bBCPjM","rpeMjYRQgxU","1pNf7Sl9w8E","9B3vAyeF6lU","nkE3yC5PQRE","KRYyPCKPTsw","GqKzS6Bn8UQ","qIl1MbWiCXA","8NeY9z6Q5vA","e4w8Bv2Q9kL","xFYQQPAOz7Y","YVkUvmDQ3HY","j5a0jTc9S10"];
-const list=document.getElementById('list');
-VIDS.forEach(id=>{
-  list.innerHTML+=`<div class="video-box"><div style="position:relative"><img class="video-thumb" src="https://img.youtube.com/vi/${id}/hqdefault.jpg" onclick="playInline('${id}', this)"><div onclick="playInline('${id}', this.previousElementSibling)" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);border-radius:50%;width:60px;height:60px;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;">▶️</div></div><button class="earn" onclick="earn()">▶️ Watch Ad & Earn R0.02</button><button class="earn-popup" style="padding:10px;margin-top:6px" onclick="earnPopup()">🛍️ Open Offer +R0.02</button></div>`;
+function updateUI(){
+  document.getElementById('balance').textContent = 'R' + balance.toFixed(2);
+  document.getElementById('totalWatched').textContent = totalWatched;
+  document.getElementById('watchedText').textContent = `${totalWatched} ads watched • R0.02 per ad`;
+}
+
+// Videos - sample
+const videos = [
+  {title:'Amapiano Mix 2026 - Best of SA', views:'1.2M views', img:'https://picsum.photos/400/250?random=1'},
+  {title:'Durban Gqom - Street Vibes', views:'890K views', img:'https://picsum.photos/400/250?random=2'},
+  {title:'Soweto Lifestyle Vlog', views:'456K views', img:'https://picsum.photos/400/250?random=3'},
+  {title:'Joburg Hip Hop Cypher', views:'234K views', img:'https://picsum.photos/400/250?random=4'},
+  {title:'Cape Town Culture Tour', views:'189K views', img:'https://picsum.photos/400/250?random=5'},
+  {title:'Mamelodi Dance Challenge', views:'312K views', img:'https://picsum.photos/400/250?random=6'},
+];
+document.getElementById('videos').innerHTML = videos.map(v=>`<div class="video"><img src="${v.img}"><div><p>${v.title}</p><small>${v.views}</small></div></div>`).join('');
+
+// WATCH AD
+document.getElementById('watchBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('watchBtn');
+  btn.disabled = true; btn.textContent = 'Loading Ad...';
+  try{
+    if(!AdController){ throw new Error('Adsgram not loaded'); }
+    const result = await AdController.show();
+    console.log('Adsgram result:', result);
+    // User watched full ad - claim reward
+    const res = await fetch('/api/claim-reward', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ userId, username: user.username, firstName: user.first_name })
+    });
+    const data = await res.json();
+    if(data.success){
+      balance = data.user.balance; totalWatched = data.user.totalWatched;
+      updateUI();
+      showToast('✅ +R0.02 Added! Balance: R' + balance.toFixed(2));
+      if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    } else {
+      showToast(data.message || 'Already credited');
+    }
+  }catch(e){
+    console.log('Ad error', e);
+    showToast('Ad not ready, try again in a few seconds');
+  }
+  btn.disabled = false; btn.textContent = '▶️ WATCH AD + R0.02';
 });
-async function earn(){ if(typeof show_12172038!=='function'){ alert('Ad SDK not ready. Make sure Rewarded Interstitial is ACTIVATED in Monetag dashboard 3559108 and wait 2 mins'); return; } const btn=document.getElementById('btnInter'); const origText=btn.innerText; btn.disabled=true; btn.innerText='⏳ Loading Ad...'; try{ await show_12172038().then(async ()=>{ btn.innerText='✅ Crediting...'; const res=await fetch(`${API_URL}/api/earn`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,username,referredBy, source:'rewarded_interstitial'})}); const data=await res.json(); updateBalUI(data); alert('You have seen an ad! +R'+USER_EARN.toFixed(2)); loadMonetagStats(); }); }catch(e){ try{ await show_12172038('pop').then(async ()=>{ const res=await fetch(`${API_URL}/api/earn`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,username,referredBy, source:'rewarded_popup_fallback'})}); const data=await res.json(); updateBalUI(data); alert('You have seen an ad! +R'+USER_EARN.toFixed(2)); loadMonetagStats(); }); }catch(e2){ alert('No ad available right now in ZA. Try again in 15 sec.'); } }finally{ btn.disabled=false; btn.innerText=origText; } }
-async function earnPopup(){ if(typeof show_12172038!=='function'){alert('Ad SDK loading...');return;} const btn=document.getElementById('btnPop'); const origText=btn.innerText; btn.disabled=true; btn.innerText='⏳ Opening Offer...'; try{ await show_12172038('pop').then(async ()=>{ btn.innerText='✅ Crediting...'; const res=await fetch(`${API_URL}/api/earn`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,username,referredBy, source:'rewarded_popup'})}); const data=await res.json(); updateBalUI(data); alert('You have seen an ad! Extra +R'+USER_EARN.toFixed(2)); loadMonetagStats(); }); }catch(e){ alert('Offer not ready. Make sure Rewarded Popup is Activated in Monetag and wait 10 mins. Disable adblock!'); } finally{ btn.disabled=false; btn.innerText=origText; } }
-async function requestWithdraw(){ const balText=document.getElementById('bal').innerText; const bal=parseFloat(balText.replace(/[^0-9.]/g,''))||0; if(bal<20) return alert(`Need R20 minimum. You have R${bal.toFixed(2)}`); const method=prompt("Method? Capitec / FNB / PayPal / eWallet");if(!method)return; const account=prompt(`Enter ${method} details:`);if(!account)return; try{const res=await fetch(`${API_URL}/api/withdraw`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,method,account,amount:bal})});const data=await res.json();if(data.success){alert('✅ '+data.message);loadBalance();}else alert('❌ '+data.error);}catch(e){alert('Network error');} }
+
+document.getElementById('withdrawBtn').addEventListener('click', async ()=>{
+  if(balance < 50){ showToast('Need R50 to withdraw. Keep watching!'); return; }
+  const method = prompt('Withdraw method? Type: Capitec / Bank / Airtime');
+  const details = prompt('Enter your number / account details:');
+  if(!method || !details) return;
+  const res = await fetch('/api/withdraw', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId, amount: balance, method, details }) });
+  const data = await res.json();
+  showToast(data.message);
+  if(data.success){ balance = data.user.balance; updateUI(); }
+});
+
+loadUser();
 </script>
 </body>
 </html>
