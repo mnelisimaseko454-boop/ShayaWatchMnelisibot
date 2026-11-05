@@ -10,7 +10,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const APP_URL = 'https://mnelisimaseko454-boop.github.io/ShayaWatchMnelisibot/';
+const APP_URL = 'https://shayawatchmnelisibot-4.onrender.com/';
 const USER_EARN = 0.10;
 const REF_BONUS = 2.50;
 const REF_REQUIRED_ADS = 5;
