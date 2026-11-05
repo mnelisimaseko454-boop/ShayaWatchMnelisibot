@@ -44,9 +44,7 @@ bot.onText(/\/start(?:\s+(.+))?/, (msg, match) => {
     saveDB();
     if (referredBy) { bot.sendMessage(referredBy, `👤 New referral! @${msg.from.username || msg.from.first_name} joined via your link. You'll get R${REF_BONUS} when they watch ${REF_REQUIRED_ADS} ads!`); }
   }
-  bot.sendMessage(msg.chat.id, `🎵 SHAYA WATCH\n\nBalance: R${balances[userId].balance.toFixed(2)}\nEarn R${USER_EARN}/ad\nRefer friends: R${REF_BONUS} per friend (after they watch ${REF_REQUIRED_ADS} ads)\n\n🔗 Your referral link:\nhttps://t.me/ShayaWatchMnelisibot?start=ref_${userId}\n\nClick to open:`, { reply_markup: { inline_keyboard: [[{ text: "▶️ OPEN SHAYA WATCH", web_app: { url: APP_URL } }]] }
-
-});
+  bot.sendMessage(msg.chat.id, `🎵 SHAYA WATCH\n\nBalance: R${balances[userId].balance.toFixed(2)}\nEarn R${USER_EARN}/ad\nRefer friends: R${REF_BONUS} per friend (after they watch ${REF_REQUIRED_ADS} ads)\n\n🔗 Your referral link:\nhttps://t.me/ShayaWatchMnelisibot?start=ref_${userId}\n\nClick to open:`, { reply_markup: { inline_keyboard: [[{ text: "▶️ OPEN SHAYA WATCH", web_app: { url: APP_URL } }]] } } });
 
 app.get('/api/balance', (req, res) => {
   const userId = String(req.query.userId || '');
