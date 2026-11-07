@@ -1,4 +1,4 @@
-// server.js - SHAYA WATCH - Adsgram Version - NEW BLOCK 58244
+// server.js - SHAYA WATCH - Adsgram Version - NEW BLOCK 58427
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -77,7 +77,7 @@ if (BOT_TOKEN) {
 } else { console.log('WARNING: No BOT_TOKEN set'); }
 app.listen(PORT, () => {
   console.log(`SHAYA WATCH running on port ${PORT}`);
-  console.log(`Adsgram Block ID: 58244`);
+  console.log(`Adsgram Block ID: 58427`);
   if (BOT_TOKEN && bot) {
     const webhookUrl = `https://shayawatchmnelisibot-4.onrender.com/bot${BOT_TOKEN}`;
     bot.telegram.setWebhook(webhookUrl).then(() => console.log('Webhook set:', webhookUrl)).catch(e => console.log('Webhook error:', e.message));
