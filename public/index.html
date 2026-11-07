@@ -98,8 +98,8 @@ const userId = String(user.id);
 let startParam = tg.initDataUnsafe?.start_param || '';
 let referredBy = null;
 if(startParam.startsWith('ref_')) referredBy = startParam.replace('ref_','');
-// === ADSGRAM CONFIG - NEW BLOCK ===
-const ADSGRAM_BLOCK_ID = "58244";
+// === ADSGRAM CONFIG - NEW BLOCK 58427 ===
+const ADSGRAM_BLOCK_ID = "58427";
 const AdController = window.Adsgram ? window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID }) : null;
 let balance = 0, totalWatched = 0;
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); }
