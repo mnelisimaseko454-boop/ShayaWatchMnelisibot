@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -16,6 +16,9 @@ body{background:#0a0a0a;color:#fff;min-height:100vh;padding:16px;padding-bottom:
 .balance-card{background:linear-gradient(135deg,#FFD700,#FF8C00);color:#000;border-radius:20px;padding:20px;margin:16px 0;text-align:center}
 .balance-card small{font-size:13px;font-weight:600;opacity:.7}
 .balance-card h1{font-size:42px;margin:4px 0}
+.profit-card{background:linear-gradient(135deg,#00FF88,#00B8FF);color:#000;border-radius:20px;padding:16px;margin:0 0 16px;text-align:center}
+.profit-card h2{font-size:32px;margin:4px 0}
+.profit-card small{font-size:12px;font-weight:700;opacity:.8}
 .stats{display:flex;gap:10px;margin-bottom:16px}
 .stat{flex:1;background:#1a1a1a;border-radius:14px;padding:12px;text-align:center}
 .stat b{font-size:18px;display:block}
@@ -37,11 +40,15 @@ body{background:#0a0a0a;color:#fff;min-height:100vh;padding:16px;padding-bottom:
 .watch-btn:disabled{opacity:.5}
 .watch-small{width:100%;background:#FFD700;color:#000;border:none;padding:12px;border-radius:12px;font-weight:800;cursor:pointer;margin-top:10px}
 .withdraw-btn{width:100%;background:#222;color:#fff;border:1px solid #333;padding:14px;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px}
+.convert-btn{width:100%;background:#00FF88;color:#000;border:none;padding:14px;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;margin-top:10px}
 .ref-box{background:#1a1a1a;border:1px solid #333;border-radius:14px;padding:14px;margin:14px 0;text-align:center}
 .ref-box input{width:100%;padding:10px;border-radius:8px;border:none;margin:8px 0;font-size:11px}
 .copy-btn{background:#FFD700;color:#000;border:none;padding:10px 16px;border-radius:10px;font-weight:800;cursor:pointer}
 .note{font-size:12px;color:#888;text-align:center;margin-top:12px;line-height:1.5}
-#toast{position:fixed;left:16px;right:16px;bottom:20px;background:#FFD700;color:#000;padding:14px;border-radius:12px;font-weight:800;text-align:center;display:none;z-index:99}
+.progress{ background:#333; height:10px; border-radius:10px; overflow:hidden; margin-top:8px; }
+.progress div{ background:#FFD700; height:100%; width:0%; transition:width .3s; }
+#toast{position:fixed;left:16px;right:16px;bottom:90px;background:#FFD700;color:#000;padding:14px;border-radius:12px;font-weight:800;text-align:center;display:none;z-index:99}
+#banner{position:fixed;bottom:0;left:0;right:0;background:#111;min-height:60px;text-align:center;z-index:100;display:flex;align-items:center;justify-content:center;color:#666;font-size:12px}
 </style>
 </head>
 <body>
@@ -49,24 +56,39 @@ body{background:#0a0a0a;color:#fff;min-height:100vh;padding:16px;padding-bottom:
 <div class="logo">SHAYA <span>WATCH</span></div>
 <div class="sub">Trending SA Videos • Music • Lifestyle • Culture</div>
 </div>
+
 <div class="balance-card">
-<small>YOUR BALANCE</small>
+<small>YOUR CASH BALANCE</small>
 <h1 id="balance">R0.00</h1>
 <small id="watchedText">0 ads watched • R0.02 per ad</small>
+<div class="progress"><div id="bar"></div></div>
+<small id="progressText">0% to R50 withdraw</small>
 </div>
+
+<div class="profit-card">
+<small>🪙 PROFIT COINS</small>
+<h2 id="coins">0 Coins</h2>
+<small id="coinValue">Value: R0.00 • 1000 Coins = R1</small>
+<br><small id="coinProgress">0 / 50000 Coins to withdraw</small>
+</div>
+
 <div class="stats">
 <div class="stat"><b id="totalWatched">0</b><span>Watched</span></div>
 <div class="stat"><b>R50</b><span>Min Withdraw</span></div>
-<div class="stat"><b>R0.02</b><span>Per Ad</span></div>
+<div class="stat"><b>10 🪙</b><span>Per Ad</span></div>
 </div>
-<button class="withdraw-btn" id="withdrawBtn">💳 Withdraw (Min R50)</button>
+
+<button class="convert-btn" onclick="convertCoins()">🔄 CONVERT COINS TO CASH (1000 Coins = R1)</button>
+<button class="withdraw-btn" id="withdrawBtn">💳 Withdraw (Min R50 or 50000 Coins)</button>
+
 <div class="ref-box">
-<b>🔗 Earn R0.50 per friend!</b>
-<p style="font-size:11px;color:#aaa;margin-top:4px">Friend must watch 10 ads, you get R0.50</p>
+<b>🔗 Earn R0.50 + 50 Coins per friend!</b>
+<p style="font-size:11px;color:#aaa;margin-top:4px">Friend must watch 10 ads, you get R0.50 + 50 Coins</p>
 <input id="refLink" readonly>
 <button class="copy-btn" onclick="copyRef()">📋 COPY LINK</button>
 <p id="refStats" style="font-size:12px;margin-top:8px;color:#aaa"></p>
 </div>
+
 <div class="tab">
 <button id="tab1" class="active" onclick="showTab('quick')">⚡ ADS ONLY</button>
 <button id="tab2" onclick="showTab('videos')">🎬 VIDEOS + ADS</button>
@@ -75,77 +97,129 @@ body{background:#0a0a0a;color:#fff;min-height:100vh;padding:16px;padding-bottom:
 <div class="card">
 <h3>⚡ Quick Earn</h3>
 <p>Watch ads and earn daily - no video needed</p>
-<button class="watch-btn" id="watchBtn">▶️ WATCH AD + R0.02</button>
-<p class="note">Tap, watch full ad, get +R0.02 instantly.<br>Tap again for another ad.</p>
+<button class="watch-btn" id="watchBtn">▶️ WATCH AD + R0.02 + 10 🪙</button>
+<p class="note">Tap, watch full ad, get +R0.02 + 10 Coins instantly.<br>Tap again for another ad.</p>
 </div>
 <div class="card">
-<h3>💡 Tip</h3>
-<p>If it says "Ad not ready", wait 10 seconds and tap again.</p>
+<h3>💡 Profit Coin Tip</h3>
+<p>Coins are your profit tracker. Convert them to cash anytime. 1000 Coins = R1. Keep watching to grow both balances.</p>
 </div>
 </div>
 <div id="videos" class="section">
 <p style="font-size:12px;color:#888;text-align:center;margin-bottom:12px">Tap video to play inside app, no YouTube app. Then Watch Ad under it to earn.</p>
 <div id="list"></div>
 </div>
-<p class="note">Watch the full ad to get rewarded.<br>Balance updates instantly. Withdraw via Capitec / Bank / Airtime.</p>
+<p class="note">Watch the full ad to get rewarded.<br>Balance updates instantly. Withdraw via Capitec / Bank / Airtime / USDT.</p>
 <div id="toast"></div>
+<div id="banner"><span>SHAYA WATCH • Ad space</span></div>
 <script>
-const tg = window.Telegram.WebApp;
-tg.ready();
-tg.expand();
+const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
 const user = tg.initDataUnsafe?.user || { id: 123456, first_name: 'Guest', username: 'guest' };
 const userId = String(user.id);
 let startParam = tg.initDataUnsafe?.start_param || '';
 let referredBy = null;
 if(startParam.startsWith('ref_')) referredBy = startParam.replace('ref_','');
 
-// === ONCLICKA CONFIG - SPOT ID 6155075 ===
+// === ONCLICKA CONFIG - KEEP 6155075 ===
 let showOnClickA = null;
 if(window.initCdTma){
-  window.initCdTma({ id: 6155075 }).then(show => {
-    showOnClickA = show;
-    console.log('OnClickA ready');
-  }).catch(e => console.log('OnClickA init error', e));
+  window.initCdTma({ id: 6155075 }).then(show => { showOnClickA = show; showBannerAd(); }).catch(e => console.log('OnClickA init error', e));
 }
-let balance = 0, totalWatched = 0;
-function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); }
+function showBannerAd(){ const b=document.getElementById('banner'); b.innerHTML='<span>🔥 SHAYA WATCH • Watch ads to earn • R0.02 + 10 🪙 per ad</span>'; }
+
+let balance = 0, totalWatched = 0, coins = 0;
+let adsSinceInterstitial = 0;
+
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',3500); }
 function showTab(t){ document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); document.querySelectorAll('.tab button').forEach(b=>b.classList.remove('active')); document.getElementById(t).classList.add('active'); document.getElementById(t==='quick'?'tab1':'tab2').classList.add('active'); }
 function copyRef(){ navigator.clipboard.writeText(document.getElementById('refLink').value); showToast('Link copied! Share on WhatsApp!'); }
-async function loadUser(){ try{ const r = await fetch(`/api/user/${userId}`); const d = await r.json(); balance=d.balance; totalWatched=d.totalWatched; updateUI(); }catch(e){} }
-function updateUI(){ document.getElementById('balance').textContent = 'R' + balance.toFixed(2); document.getElementById('totalWatched').textContent = totalWatched; document.getElementById('watchedText').textContent = `${totalWatched} ads watched • R0.02 per ad`; document.getElementById('refLink').value = `https://t.me/ShayaWatchMnelisibot?start=ref_${userId}`; }
+
+// === PROFIT COIN SYSTEM ===
+function loadLocal(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('shaya_coins_'+userId) || '0');
+    coins = saved || 0;
+  }catch(e){ coins = 0; }
+  updateUI();
+}
+function saveLocal(){ localStorage.setItem('shaya_coins_'+userId, JSON.stringify(coins)); }
+function coinValue(){ return coins / 1000; }
+function convertCoins(){
+  if(coins < 1000){ showToast('Need 1000 Coins to convert (R1). You have '+coins); return; }
+  const add = coinValue();
+  balance += add;
+  showToast(`✅ Converted ${coins} Coins = R${add.toFixed(2)} added to cash!`);
+  coins = 0; saveLocal(); updateUI(); syncCoins();
+}
+async function syncCoins(){
+  try{ await fetch('/api/coins', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({userId, coins})}); }catch(e){}
+}
+
+async function loadUser(){
+  loadLocal();
+  try{ const r = await fetch(`/api/user/${userId}`); const d = await r.json(); balance=d.balance; totalWatched=d.totalWatched; if(d.coins !== undefined) { coins = d.coins; saveLocal(); } updateUI(); }catch(e){}
+}
+function updateUI(){
+  document.getElementById('balance').textContent = 'R' + balance.toFixed(2);
+  document.getElementById('coins').textContent = coins.toLocaleString() + ' Coins';
+  document.getElementById('coinValue').textContent = `Value: R${coinValue().toFixed(2)} • 1000 Coins = R1`;
+  document.getElementById('coinProgress').textContent = `${coins.toLocaleString()} / 50000 Coins to withdraw`;
+  document.getElementById('totalWatched').textContent = totalWatched;
+  document.getElementById('watchedText').textContent = `${totalWatched} ads watched • R0.02 + 10 🪙 per ad`;
+  const pct = Math.min(100, Math.round(balance/50*100));
+  document.getElementById('bar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = pct + '% to R50 withdraw';
+  document.getElementById('refLink').value = `https://t.me/ShayaWatchMnelisibot?start=ref_${userId}`;
+}
+
+// === YOUR 20 YOUTUBE VIDEOS - KEPT ===
 const VIDS = ["y4h7YEGo5-I","Yi8Lcry8IzY","bvl39nmaOYU","K9Ge-bBCPjM","rpeMjYRQgxU","1pNf7Sl9w8E","9B3vAyeF6lU","nkE3yC5PQRE","KRYyPCKPTsw","GqKzS6Bn8UQ","qIl1MbWiCXA","8NeY9z6Q5vA","e4w8Bv2Q9kL","xFYQQPAOz7Y","YVkUvmDQ3HY","j5a0jTc9S10","yGK4_D_tEyU","DPq_ePBXZH8","d6caEKHc2E8","_LC1gKZ7fws"];
-function playInline(id, el){ const box = el.closest('.video-box'); box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1" style="width:100%;height:180px;border:none;" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe><div style="padding:12px"><button class="watch-small" onclick="watchAd(this)">▶️ Watch Ad & Earn R0.02</button></div>`; if(window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.expand(); }
+function playInline(id, el){ const box = el.closest('.video-box'); box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1" style="width:100%;height:180px;border:none;" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe><div style="padding:12px"><button class="watch-small" onclick="watchAd(this)">▶️ Watch Ad & Earn R0.02 + 10 🪙</button></div>`; if(window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.expand(); }
 const list = document.getElementById('list');
-VIDS.forEach((id, i)=>{ list.innerHTML += `<div class="video-box"><div style="position:relative"><img class="video-thumb" src="https://img.youtube.com/vi/${id}/hqdefault.jpg" onclick="playInline('${id}', this)"><div class="play-overlay" onclick="playInline('${id}', this.previousElementSibling)">▶️</div></div><div class="video-info"><p>SHAYA Video #${i+1}</p><button class="watch-small" onclick="watchAd(this)">▶️ Watch Ad & Earn R0.02</button></div></div>`; });
+VIDS.forEach((id, i)=>{ list.innerHTML += `<div class="video-box"><div style="position:relative"><img class="video-thumb" src="https://img.youtube.com/vi/${id}/hqdefault.jpg" onclick="playInline('${id}', this)"><div class="play-overlay" onclick="playInline('${id}', this.previousElementSibling)">▶️</div></div><div class="video-info"><p>SHAYA Video #${i+1}</p><button class="watch-small" onclick="watchAd(this)">▶️ Watch Ad & Earn R0.02 + 10 🪙</button></div></div>`; });
+
 async function watchAd(btn){
-let origText = '';
-if(btn){ origText = btn.textContent; btn.disabled = true; btn.textContent = 'Loading Ad...'; }
-const mainBtn = document.getElementById('watchBtn');
-if(mainBtn){ mainBtn.disabled = true; mainBtn.textContent = 'Loading Ad...'; }
-try{
-if(!showOnClickA) throw new Error('OnClickA not loaded yet');
-await showOnClickA();
-console.log('OnClickA ad shown');
-const res = await fetch('/api/claim-reward', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId, username: user.username, firstName: user.first_name, referredBy }) });
-const data = await res.json();
-if(data.success){ balance = data.user.balance; totalWatched = data.user.totalWatched; updateUI(); showToast('✅ +R0.02 Added! Balance: R' + balance.toFixed(2)); if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); }
-else { showToast(data.message || 'Already credited'); }
-}catch(e){ console.log('Ad error', e); showToast('Ad not ready, try again in a few seconds'); }
-if(btn){ btn.disabled = false; btn.textContent = origText; }
-if(mainBtn){ mainBtn.disabled = false; mainBtn.textContent = '▶️ WATCH AD + R0.02'; }
+  let origText = '';
+  if(btn){ origText = btn.textContent; btn.disabled = true; btn.textContent = 'Loading Ad...'; }
+  const mainBtn = document.getElementById('watchBtn');
+  if(mainBtn){ mainBtn.disabled = true; mainBtn.textContent = 'Loading Ad...'; }
+  try{
+    if(!showOnClickA) throw new Error('OnClickA not loaded yet');
+    await showOnClickA();
+    const res = await fetch('/api/claim-reward', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId, username: user.username, firstName: user.first_name, referredBy }) });
+    const data = await res.json();
+    if(data.success){
+      balance = data.user.balance; totalWatched = data.user.totalWatched;
+      // PROFIT COIN: +10 per ad
+      coins += 10; saveLocal(); syncCoins();
+      updateUI();
+      showToast('✅ +R0.02 + 10 🪙 Added! Coins: ' + coins.toLocaleString());
+      if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      adsSinceInterstitial++;
+      if(adsSinceInterstitial >= 3){
+        adsSinceInterstitial = 0;
+        setTimeout(async () => { try { await showOnClickA(); showToast('🔥 Bonus ad shown!'); } catch(e){} }, 800);
+      }
+    } else { showToast(data.message || 'Already credited'); }
+  }catch(e){ console.log('Ad error', e); showToast('Ad not ready, try again in a few seconds'); }
+  if(btn){ btn.disabled = false; btn.textContent = origText; }
+  if(mainBtn){ mainBtn.disabled = false; mainBtn.textContent = '▶️ WATCH AD + R0.02 + 10 🪙'; }
 }
 document.getElementById('watchBtn').addEventListener('click', function(){ watchAd(this); });
 document.getElementById('withdrawBtn').addEventListener('click', async ()=>{
-if(balance < 50){ showToast('Need R50 to withdraw. Keep watching!'); return; }
-const method = prompt('Withdraw method? Type: Capitec / Bank / Airtime');
-const details = prompt('Enter your number / account details:');
-if(!method || !details) return;
-const res = await fetch('/api/withdraw', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId, amount: balance, method, details }) });
-const data = await res.json();
-showToast(data.message);
-if(data.success){ balance = data.user.balance; updateUI(); }
+  if(balance < 50 && coins < 50000){ showToast(`Need R50 OR 50000 Coins. You have R${balance.toFixed(2)} + ${coins} Coins`); return; }
+  const method = prompt('Withdraw method? Type: Capitec / Bank / Airtime / USDT');
+  const details = prompt('Enter your number / account details:');
+  if(!method || !details) return;
+  // If paying with coins, convert first
+  let payAmount = balance;
+  let payCoins = 0;
+  if(balance < 50 && coins >= 50000){ payCoins = 50000; payAmount = 50; }
+  const res = await fetch('/api/withdraw', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId, amount: payAmount, coins: payCoins, method, details }) });
+  const data = await res.json(); showToast(data.message);
+  if(data.success){ balance = data.user.balance; if(data.user.coins !== undefined) coins = data.user.coins; else coins = 0; saveLocal(); updateUI(); }
 });
-loadUser();
+loadUser(); showBannerAd();
 </script>
 </body>
 </html>
