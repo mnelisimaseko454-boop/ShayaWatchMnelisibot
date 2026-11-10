@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>SHAYA WATCH</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+<script src="https://js.onclckvd.com/in-stream-ad-admanager/tma.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
 body{background:#0a0a0a;color:#fff;min-height:100vh;padding:16px;padding-bottom:90px}
@@ -80,7 +80,7 @@ body{background:#0a0a0a;color:#fff;min-height:100vh;padding:16px;padding-bottom:
 </div>
 <div class="card">
 <h3>💡 Tip</h3>
-<p>If it says "Ad not ready", wait 10 seconds and tap again. Adsgram fills up after a few taps.</p>
+<p>If it says "Ad not ready", wait 10 seconds and tap again.</p>
 </div>
 </div>
 <div id="videos" class="section">
@@ -98,9 +98,15 @@ const userId = String(user.id);
 let startParam = tg.initDataUnsafe?.start_param || '';
 let referredBy = null;
 if(startParam.startsWith('ref_')) referredBy = startParam.replace('ref_','');
-// === ADSGRAM CONFIG - NEW BLOCK 58427 ===
-const ADSGRAM_BLOCK_ID = "58427";
-const AdController = window.Adsgram ? window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID }) : null;
+
+// === ONCLICKA CONFIG - SPOT ID 6155075 ===
+let showOnClickA = null;
+if(window.initCdTma){
+  window.initCdTma({ id: 6155075 }).then(show => {
+    showOnClickA = show;
+    console.log('OnClickA ready');
+  }).catch(e => console.log('OnClickA init error', e));
+}
 let balance = 0, totalWatched = 0;
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); }
 function showTab(t){ document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); document.querySelectorAll('.tab button').forEach(b=>b.classList.remove('active')); document.getElementById(t).classList.add('active'); document.getElementById(t==='quick'?'tab1':'tab2').classList.add('active'); }
@@ -117,9 +123,9 @@ if(btn){ origText = btn.textContent; btn.disabled = true; btn.textContent = 'Loa
 const mainBtn = document.getElementById('watchBtn');
 if(mainBtn){ mainBtn.disabled = true; mainBtn.textContent = 'Loading Ad...'; }
 try{
-if(!AdController) throw new Error('Adsgram not loaded');
-const result = await AdController.show();
-console.log('Adsgram result:', result);
+if(!showOnClickA) throw new Error('OnClickA not loaded yet');
+await showOnClickA();
+console.log('OnClickA ad shown');
 const res = await fetch('/api/claim-reward', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId, username: user.username, firstName: user.first_name, referredBy }) });
 const data = await res.json();
 if(data.success){ balance = data.user.balance; totalWatched = data.user.totalWatched; updateUI(); showToast('✅ +R0.02 Added! Balance: R' + balance.toFixed(2)); if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); }
