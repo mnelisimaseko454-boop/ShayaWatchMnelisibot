@@ -1,85 +1,107 @@
-// server.js - SHAYA WATCH - Adsgram Version - NEW BLOCK 58427
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const fs = require('fs');
-const { createBot } = require('./bot');
+const path = require('path');
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-const PORT = process.env.PORT || 10000;
-const BOT_TOKEN = process.env.BOT_TOKEN;
+
 const DB_FILE = path.join(__dirname, 'db.json');
-function loadDB() {
-  try { if (fs.existsSync(DB_FILE)) return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); } catch (e) {}
-  return { users: {} };
-}
-function saveDB(db) { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); }
-let db = loadDB();
-function getUser(userId) {
+let db = { users: {} };
+if (fs.existsSync(DB_FILE)) { try { db = JSON.parse(fs.readFileSync(DB_FILE)); } catch(e){} }
+function save(){ fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); }
+
+function getUser(userId){
   userId = String(userId);
-  if (!db.users[userId]) {
-    db.users[userId] = { id: userId, balance: 0, totalWatched: 0, totalEarned: 0, lastRewardAt: 0, username: '', firstName: '' };
-    saveDB(db);
+  if(!db.users[userId]){
+    db.users[userId] = {
+      userId, username: "", firstName: "",
+      balance: 0, coins: 0,
+      totalWatched: 0,
+      referrals: 0, referralEarnings: 0,
+      referredBy: null, referralCounted: false,
+      withdrawals: []
+    };
   }
   return db.users[userId];
 }
-function addBalance(userId, amount, reason) {
-  const user = getUser(userId);
-  user.balance = Math.round((user.balance + amount) * 100) / 100;
-  user.totalEarned = Math.round((user.totalEarned + amount) * 100) / 100;
-  user.totalWatched += 1;
-  user.lastRewardAt = Date.now();
-  saveDB(db);
-  console.log(`+R${amount} to ${userId} - ${reason} - new balance R${user.balance}`);
-  return user;
-}
-app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-app.get('/api/user/:id', (req, res) => { const user = getUser(req.params.id); res.json(user); });
+
+// === GET USER - for index.html loadUser() ===
+app.get('/api/user/:userId', (req, res) => {
+  const u = getUser(req.params.userId);
+  res.json({ balance: u.balance, coins: u.coins, totalWatched: u.totalWatched, referrals: u.referrals, referralEarnings: u.referralEarnings });
+});
+
+// === CLAIM REWARD - R0.02 + 10 COINS per ad ===
 app.post('/api/claim-reward', (req, res) => {
-  const { userId, username, firstName } = req.body;
-  if (!userId) return res.status(400).json({ error: 'userId required' });
-  const user = getUser(userId);
-  if (username) user.username = username;
-  if (firstName) user.firstName = firstName;
-  if (Date.now() - user.lastRewardAt < 5000) { return res.json({ success: false, message: 'Wait a bit', user }); }
-  const updated = addBalance(userId, 0.02, 'adsgram-frontend');
-  saveDB(db);
-  res.json({ success: true, reward: 0.02, user: updated });
-});
-app.get('/api/adsgram-reward', (req, res) => {
-  const userId = req.query.user_id || req.query.userId || req.query.userid;
-  console.log('Adsgram callback:', req.query);
-  if (!userId) return res.status(400).send('missing user_id');
-  const user = getUser(userId);
-  if (Date.now() - user.lastRewardAt < 10000) { return res.send('OK - already credited'); }
-  addBalance(userId, 0.02, 'adsgram-callback');
-  res.send('OK');
-});
-app.post('/api/withdraw', (req, res) => {
-  const { userId, amount, method, details } = req.body;
-  const user = getUser(userId);
-  if (user.balance < 50) return res.json({ success: false, message: 'Minimum withdrawal is R50. Keep watching!' });
-  if (amount > user.balance) return res.json({ success: false, message: 'Not enough balance' });
-  user.balance = Math.round((user.balance - amount) * 100) / 100;
-  saveDB(db);
-  console.log(`WITHDRAW: User ${userId} - R${amount} via ${method} - ${details}`);
-  res.json({ success: true, message: `Withdrawal of R${amount} requested. We will pay within 24h.`, user });
-});
-let bot = null;
-if (BOT_TOKEN) {
-  bot = createBot(BOT_TOKEN, { getUser });
-  app.use(bot.webhookCallback('/bot' + BOT_TOKEN));
-  console.log('Bot webhook ready at /bot' + BOT_TOKEN);
-} else { console.log('WARNING: No BOT_TOKEN set'); }
-app.listen(PORT, () => {
-  console.log(`SHAYA WATCH running on port ${PORT}`);
-  console.log(`Adsgram Block ID: 58427`);
-  if (BOT_TOKEN && bot) {
-    const webhookUrl = `https://shayawatchmnelisibot-4.onrender.com/bot${BOT_TOKEN}`;
-    bot.telegram.setWebhook(webhookUrl).then(() => console.log('Webhook set:', webhookUrl)).catch(e => console.log('Webhook error:', e.message));
+  const { userId, username, firstName, referredBy } = req.body;
+  if(!userId) return res.json({ success: false, message: 'No userId' });
+  const u = getUser(userId);
+  u.username = username || u.username;
+  u.firstName = firstName || u.firstName;
+
+  // Referral - first time only
+  if(referredBy && referredBy !== String(userId) && !u.referredBy){
+    u.referredBy = referredBy;
   }
+
+  u.balance = Math.round((u.balance + 0.02) * 100) / 100;
+  u.coins += 10;
+  u.totalWatched += 1;
+
+  // Referral bonus: when referred user hits 10 ads, referrer gets R0.50 + 50 Coins
+  if(u.referredBy && !u.referralCounted && u.totalWatched >= 10){
+    u.referralCounted = true;
+    const ref = getUser(u.referredBy);
+    ref.balance = Math.round((ref.balance + 0.50) * 100) / 100;
+    ref.coins += 50;
+    ref.referrals += 1;
+    ref.referralEarnings = Math.round((ref.referralEarnings + 0.50) * 100) / 100;
+  }
+
+  save();
+  res.json({ success: true, user: { balance: u.balance, coins: u.coins, totalWatched: u.totalWatched } });
 });
+
+// === SYNC COINS - from localStorage ===
+app.post('/api/coins', (req, res) => {
+  const { userId, coins } = req.body;
+  if(!userId) return res.json({ success: false });
+  const u = getUser(userId);
+  // Only take higher value, to avoid overwriting with old phone data
+  if(typeof coins === 'number' && coins > u.coins) u.coins = coins;
+  save();
+  res.json({ success: true, coins: u.coins });
+});
+
+// === WITHDRAW - R50 OR 50000 Coins ===
+app.post('/api/withdraw', (req, res) => {
+  const { userId, amount, coins, method, details } = req.body;
+  const u = getUser(userId);
+
+  // Pay with Coins (50000 Coins = R50)
+  if(coins && coins >= 50000){
+    if(u.coins < 50000) return res.json({ success: false, message: 'Not enough coins. You have ' + u.coins });
+    u.coins -= 50000;
+    u.withdrawals.push({ type: 'coins', coins: 50000, amount: 50, method, details, date: new Date().toISOString(), status: 'pending' });
+    save();
+    return res.json({ success: true, message: '✅ Withdraw R50 (50000 Coins) requested! Paid via ' + method, user: { balance: u.balance, coins: u.coins } });
+  }
+
+  // Pay with Cash
+  if(u.balance < 50) return res.json({ success: false, message: `Need R50. You have R${u.balance.toFixed(2)}` });
+  const pay = amount || u.balance;
+  u.balance = 0; // withdraw all
+  u.withdrawals.push({ type: 'cash', amount: pay, method, details, date: new Date().toISOString(), status: 'pending' });
+  save();
+  res.json({ success: true, message: `✅ Withdraw R${pay.toFixed(2)} requested! Paid via ${method}`, user: { balance: u.balance, coins: u.coins } });
+});
+
+// === ADMIN: See all users / withdrawals ===
+app.get('/api/admin/users', (req, res) => {
+  res.json(Object.values(db.users));
+});
+
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+module.exports = app;
