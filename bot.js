@@ -1,66 +1,52 @@
-// bot.js - SHAYA WATCH Telegram Bot
-const { Telegraf, Markup } = require('telegraf');
+const TelegramBot = require('node-telegram-bot-api');
+const BOT_TOKEN = process.env.BOT_TOKEN || "PUT_YOUR_BOT_TOKEN_HERE";
+const WEB_APP_URL = process.env.WEB_APP_URL || "PUT_YOUR_RENDER_URL_HERE";
 
-function createBot(token, deps) {
-  const bot = new Telegraf(token);
-  const { getUser } = deps;
+function startBot(){
+  const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
-  const WEBAPP_URL = 'https://shayawatchmnelisibot-4.onrender.com/';
+  bot.onText(/\/start(.*)/, (msg, match) => {
+    const startParam = (match[1] || "").trim();
+    const refLink = `https://t.me/ShayaWatchMnelisibot?start=ref_${msg.from.id}`;
+    bot.sendMessage(msg.chat.id,
+`🔥 SHAYA WATCH 🇿🇦
 
-  bot.start((ctx) => {
-    const user = getUser(ctx.from.id);
-    user.username = ctx.from.username || '';
-    user.firstName = ctx.from.first_name || '';
-    return ctx.reply(
-      `🔥 *Welcome to SHAYA WATCH* 🔥\n\n` +
-      `Trending videos, music, lifestyle & culture from SA creators.\n\n` +
-      `💰 Watch ads → Earn R0.02 per ad\n` +
-      `💳 Min Withdraw: R50\n` +
-      `👤 Balance: R${user.balance.toFixed(2)}\n\n` +
-      `Tap below to open the app 👇`,
-      {
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard([
-          [Markup.button.webApp('▶️ Open SHAYA WATCH', WEBAPP_URL)],
-          [Markup.button.callback('💰 My Balance', 'balance')],
-          [Markup.button.callback('ℹ️ How it works', 'how')]
-        ])
-      }
-    );
+Earn by watching ads + videos!
+
+✅ 1 Ad = R0.02 + 10 🪙 Profit Coins
+✅ 1000 Coins = R1
+✅ 50000 Coins = R50
+✅ Withdraw at R50 or 50000 Coins
+
+🎬 20 Trending SA Videos
+🔗 Referral: R0.50 + 50 Coins per friend
+
+Tap below to open 👇\n\nYour referral link:\n${refLink}`, {
+      reply_markup: { inline_keyboard: [[{ text: "🚀 OPEN SHAYA WATCH", web_app: { url: WEB_APP_URL + (startParam ? `?start=${startParam}` : "") } }]] }
+    });
   });
 
-  bot.action('balance', (ctx) => {
-    const user = getUser(ctx.from.id);
-    ctx.reply(`💰 *Your Balance*\n\nBalance: R${user.balance.toFixed(2)}\nTotal Watched: ${user.totalWatched}\nTotal Earned: R${user.totalEarned.toFixed(2)}\n\nMin Withdraw: R50`, { parse_mode: 'Markdown' });
+  bot.onText(/\/help/, (msg) => {
+    bot.sendMessage(msg.chat.id,
+`HOW IT WORKS:
+
+1. Tap OPEN SHAYA WATCH
+2. Tap WATCH AD - watch full ad
+3. Get +R0.02 + 10 Coins instantly
+4. Tap CONVERT to turn 1000 Coins = R1 cash
+5. At R50 or 50000 Coins, tap WITHDRAW
+6. Share your link, get R0.50 + 50 Coins per friend
+
+Pay: Capitec / Bank / Airtime / USDT`);
   });
 
-  bot.action('how', (ctx) => {
-    ctx.reply(
-      `ℹ️ *How SHAYA WATCH Works*\n\n` +
-      `1. Open the Mini App\n` +
-      `2. Tap WATCH AD\n` +
-      `3. Watch the full ad\n` +
-      `4. Get R0.02 instantly\n` +
-      `5. Withdraw at R50 via Capitec / Bank / Airtime\n\n` +
-      `No limit - watch as much as you want!`,
-      { parse_mode: 'Markdown' }
-    );
+  bot.onText(/\/balance/, (msg) => {
+    bot.sendMessage(msg.chat.id, "Open the app to see your balance + coins 👇", {
+      reply_markup: { inline_keyboard: [[{ text: "🚀 OPEN SHAYA WATCH", web_app: { url: WEB_APP_URL } }]] }
+    });
   });
 
-  bot.command('balance', (ctx) => {
-    const user = getUser(ctx.from.id);
-    ctx.reply(`Balance: R${user.balance.toFixed(2)} | Watched: ${user.totalWatched}`);
-  });
-
-  bot.command('app', (ctx) => {
-    ctx.reply('Open SHAYA WATCH:', Markup.inlineKeyboard([[Markup.button.webApp('▶️ Open App', WEBAPP_URL)]]));
-  });
-
-  bot.on('text', (ctx) => {
-    ctx.reply('Tap below to open SHAYA WATCH 👇', Markup.inlineKeyboard([[Markup.button.webApp('▶️ Open SHAYA WATCH', WEBAPP_URL)]]));
-  });
-
+  console.log("Telegram Bot started...");
   return bot;
 }
-
-module.exports = { createBot };
+module.exports = startBot;
